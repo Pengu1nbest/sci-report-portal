@@ -744,6 +744,61 @@
     </div>
   </div>
 
+  <!-- MODAL 4: First-Login Password Change & 180-Day Password Policy -->
+  <div id="modal-password-policy" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="pwd-policy-title">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div>
+          <h2 id="pwd-policy-title">首次登入 — 請修改您的初始密碼</h2>
+          <p class="modal-subtitle" id="pwd-policy-subtitle">為確保帳號安全，首次登入請設定您的專屬密碼（系統將記錄最後修改日期，每 180 天定期提醒）</p>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div id="pwd-policy-last-date" style="margin-bottom:14px; padding:10px 12px; border-radius:8px; background:#f0fdfa; border:1px solid #99f6e4; font-size:12.5px; color:#0f766e;">
+          尚未修改過初始密碼
+        </div>
+
+        <form id="form-password-policy" class="form-stack">
+          <div class="form-group">
+            <label for="policy-new-password">設定新密碼（至少 6 碼） <span class="req">*</span></label>
+            <input
+              type="password"
+              id="policy-new-password"
+              placeholder="請輸入新密碼（至少 6 個字元）"
+              minlength="6"
+              required
+              autocomplete="new-password"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="policy-confirm-password">再次確認新密碼 <span class="req">*</span></label>
+            <input
+              type="password"
+              id="policy-confirm-password"
+              placeholder="請再次輸入相同的新密碼"
+              minlength="6"
+              required
+              autocomplete="new-password"
+            />
+          </div>
+
+          <p id="pwd-policy-error" class="form-error hidden"></p>
+
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+            <button type="submit" class="btn btn-primary btn-block" id="btn-policy-save-new" style="padding:10px 16px;">
+              🔒 確認修改新密碼（並更新 180 天有效期）
+            </button>
+            <button type="button" class="btn btn-outline btn-block hidden" id="btn-keep-old-password" style="padding:10px 16px;">
+              🔄 沿用舊密碼（刷新 180 天有效期）
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden file input for Admin uploading on behalf of a group -->
   <input type="file" id="admin-proxy-file-input" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.png,.jpg" hidden />
 

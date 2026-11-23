@@ -520,6 +520,7 @@ function getAllAccounts(db) {
         altEmail: m.altEmail || '',
         password: pwdHash,
         passwordHash: pwdHash,
+        passwordUpdatedAt: m.passwordUpdatedAt || null,
         groupOrder: g.order,
         groupName: g.name,
         role: isAdmin ? 'admin' : 'student',
@@ -538,6 +539,7 @@ function getAllAccounts(db) {
       altEmail: ex.altEmail || '',
       password: pwdHash,
       passwordHash: pwdHash,
+      passwordUpdatedAt: ex.passwordUpdatedAt || null,
       groupOrder: ex.groupOrder || null,
       groupName: ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
       role: isAdmin ? 'admin' : 'student',
@@ -878,6 +880,59 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   res.json({ user: student });
+});
+
+// 2b. Update password or refresh 180-day password expiration (action: 'change' | 'keep')
+app.post('/api/auth/update-password', (req, res) => {
+  const { studentId, email, action, newPassword } = req.body;
+  const query = (email || studentId || '').trim().toLowerCase();
+  if (!query) {
+    return res.status(400).json({ error: '缺少帳號資訊' });
+  }
+
+  const db = loadDb();
+  let targetMember = null;
+  for (const g of db.groups) {
+    const m = g.members.find(
+      item => item.email.toLowerCase() === query || item.id.toLowerCase() === query
+    );
+    if (m) {
+      targetMember = m;
+      break;
+    }
+  }
+  if (!targetMember) {
+    targetMember = (db.extraStudents || []).find(
+      item => item.email.toLowerCase() === query || item.id.toLowerCase() === query
+    );
+  }
+
+  if (!targetMember) {
+    return res.status(404).json({ error: '找不到對應的帳號' });
+  }
+
+  const nowIso = new Date().toISOString();
+
+  if (action === 'keep') {
+    targetMember.passwordUpdatedAt = nowIso;
+    saveDb(db);
+    const updatedUser = findStudent(db, targetMember.email);
+    return res.json({ success: true, user: updatedUser, passwordUpdatedAt: nowIso });
+  }
+
+  const cleanNewPwd = String(newPassword || '').trim();
+  if (cleanNewPwd.length < 6) {
+    return res.status(400).json({ error: '新密碼長度至少需要 6 個字元' });
+  }
+
+  const newHash = hashPassword(cleanNewPwd);
+  targetMember.password = newHash;
+  targetMember.passwordHash = newHash;
+  targetMember.passwordUpdatedAt = nowIso;
+  saveDb(db);
+
+  const updatedUser = findStudent(db, targetMember.email);
+  res.json({ success: true, user: updatedUser, passwordUpdatedAt: nowIso });
 });
 
 // 3. Submit or update a rating for a group (1~5 scale x 4 = 20 points per criterion, max 100)

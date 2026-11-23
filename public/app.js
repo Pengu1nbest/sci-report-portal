@@ -108,6 +108,7 @@ function buildAccountsFromDb(db) {
         altEmail: m.altEmail || '',
         password: pwdHash,
         passwordHash: pwdHash,
+        passwordUpdatedAt: m.passwordUpdatedAt || null,
         groupOrder: g.order,
         groupName: g.name,
         role: isAdmin ? 'admin' : 'student',
@@ -126,6 +127,7 @@ function buildAccountsFromDb(db) {
       altEmail: ex.altEmail || '',
       password: pwdHash,
       passwordHash: pwdHash,
+      passwordUpdatedAt: ex.passwordUpdatedAt || null,
       groupOrder: ex.groupOrder || null,
       groupName: ex.id === 'teacher' ? '授課教師 / 管理員' : ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
       role: isAdmin ? 'admin' : 'student',
@@ -552,6 +554,9 @@ async function fetchPortalData() {
 
   updateUserTopbar();
   renderAll();
+  if (state.user) {
+    checkPasswordPolicy(state.user);
+  }
 }
 
 function renderAll() {
@@ -1479,6 +1484,7 @@ async function performLogin(studentId, password) {
     } else {
       showToast(`歡迎登入！${matched.name}（第 ${matched.groupOrder || '—'} 組）`, 'success');
     }
+    checkPasswordPolicy(matched);
     return;
   }
 
@@ -1505,6 +1511,147 @@ async function performLogin(studentId, password) {
     } else {
       showToast(`歡迎登入！${data.user.name}（第 ${data.user.groupOrder || '—'} 組）`, 'success');
     }
+    checkPasswordPolicy(data.user);
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = '網路連線異常：' + err.message;
+      errEl.classList.remove('hidden');
+    }
+  }
+}
+
+// 8b. Check First-Login Password Change & 180-Day Password Policy
+const PASSWORD_EXPIRE_DAYS = 180;
+
+function checkPasswordPolicy(user) {
+  if (!user) return;
+  const modal = document.getElementById('modal-password-policy');
+  if (!modal) return;
+
+  const titleEl = document.getElementById('pwd-policy-title');
+  const subEl = document.getElementById('pwd-policy-subtitle');
+  const lastDateEl = document.getElementById('pwd-policy-last-date');
+  const keepBtn = document.getElementById('btn-keep-old-password');
+  const errEl = document.getElementById('pwd-policy-error');
+
+  if (errEl) errEl.classList.add('hidden');
+  document.getElementById('policy-new-password').value = '';
+  document.getElementById('policy-confirm-password').value = '';
+
+  const updatedAt = user.passwordUpdatedAt;
+  if (!updatedAt) {
+    // First-time login: automatically prompt to change initial password
+    titleEl.textContent = `歡迎 ${user.name} — 首次登入請修改初始密碼`;
+    subEl.textContent = '為保護您的帳號安全，新登入進來請先設定個人專屬密碼（系統將保存修改日期，並每 180 天定期詢問）。';
+    lastDateEl.textContent = '📅 最後修改密碼日期：尚未修改（首次登入）';
+    keepBtn.classList.add('hidden');
+    openModal('modal-password-policy');
+    return;
+  }
+
+  const lastTime = new Date(updatedAt).getTime();
+  const daysElapsed = (Date.now() - lastTime) / (1000 * 60 * 60 * 24);
+  if (daysElapsed >= PASSWORD_EXPIRE_DAYS) {
+    const formattedDate = new Date(updatedAt).toLocaleDateString('zh-TW');
+    titleEl.textContent = '密碼已滿 180 天 — 請選擇沿用或修改密碼';
+    subEl.textContent = '距離您上次修改或確認密碼已達 180 天，您可選擇設定新密碼，或直接沿用舊密碼並刷新 180 天有效期。';
+    lastDateEl.textContent = `📅 最後修改密碼日期：${formattedDate}（已過 ${Math.floor(daysElapsed)} 天）`;
+    keepBtn.classList.remove('hidden');
+    openModal('modal-password-policy');
+  }
+}
+
+async function applyPasswordPolicyUpdate(action, newPassword = '') {
+  if (!state.user) return;
+  const errEl = document.getElementById('pwd-policy-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (action === 'change') {
+    const p1 = String(newPassword || '').trim();
+    const p2 = String(document.getElementById('policy-confirm-password').value || '').trim();
+    if (p1.length < 6) {
+      if (errEl) {
+        errEl.textContent = '新密碼長度至少需要 6 個字元。';
+        errEl.classList.remove('hidden');
+      }
+      return;
+    }
+    if (p1 !== p2) {
+      if (errEl) {
+        errEl.textContent = '兩次輸入的新密碼不一致，請重新確認。';
+        errEl.classList.remove('hidden');
+      }
+      return;
+    }
+  }
+
+  const nowIso = new Date().toISOString();
+
+  if (state.isStaticMode) {
+    const newHash = action === 'change' ? await hashPasswordClient(newPassword) : (state.user.passwordHash || state.user.password);
+    const targetEmail = (state.user.email || '').toLowerCase();
+    const targetId = (state.user.id || '').toLowerCase();
+
+    for (const g of state.groups) {
+      for (const m of g.members || []) {
+        if (m.email.toLowerCase() === targetEmail || m.id.toLowerCase() === targetId) {
+          m.password = newHash;
+          m.passwordHash = newHash;
+          m.passwordUpdatedAt = nowIso;
+        }
+      }
+    }
+    for (const ex of state.extraStudents || []) {
+      if (ex.email.toLowerCase() === targetEmail || ex.id.toLowerCase() === targetId) {
+        ex.password = newHash;
+        ex.passwordHash = newHash;
+        ex.passwordUpdatedAt = nowIso;
+      }
+    }
+
+    saveStaticDb();
+    const updatedUser = state.accounts.find(
+      a => a.email.toLowerCase() === targetEmail || a.id.toLowerCase() === targetId
+    );
+    if (updatedUser) saveUser(updatedUser);
+    closeModal('modal-password-policy');
+    showToast(
+      action === 'keep'
+        ? '已沿用舊密碼，並成功刷新 180 天有效期！'
+        : '密碼修改成功（已加密儲存並記錄修改日期，180 天後將再次提醒）！',
+      'success'
+    );
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth/update-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        studentId: state.user.id,
+        email: state.user.email,
+        action,
+        newPassword
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (errEl) {
+        errEl.textContent = data.error || '更新密碼失敗';
+        errEl.classList.remove('hidden');
+      }
+      return;
+    }
+    if (data.user) saveUser(data.user);
+    closeModal('modal-password-policy');
+    await fetchPortalData();
+    showToast(
+      action === 'keep'
+        ? '已沿用舊密碼，並成功刷新 180 天有效期！'
+        : '密碼修改成功（已加密儲存並記錄修改日期，180 天後將再次提醒）！',
+      'success'
+    );
   } catch (err) {
     if (errEl) {
       errEl.textContent = '網路連線異常：' + err.message;
@@ -1731,6 +1878,22 @@ function bindEvents() {
       const studentId = document.getElementById('gate-input-student-id').value;
       const password = document.getElementById('gate-input-password').value;
       await performLogin(studentId, password);
+    });
+  }
+
+  // First-Login Password Change & 180-Day Password Policy Modal Handlers
+  const pwdPolicyForm = document.getElementById('form-password-policy');
+  if (pwdPolicyForm) {
+    pwdPolicyForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const newPwd = document.getElementById('policy-new-password').value;
+      await applyPasswordPolicyUpdate('change', newPwd);
+    });
+  }
+  const keepOldPwdBtn = document.getElementById('btn-keep-old-password');
+  if (keepOldPwdBtn) {
+    keepOldPwdBtn.addEventListener('click', async () => {
+      await applyPasswordPolicyUpdate('keep');
     });
   }
 
