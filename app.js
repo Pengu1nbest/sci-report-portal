@@ -867,22 +867,33 @@ function renderMyGroupWorkspace() {
     `;
   } else {
     filesContainer.innerHTML = files
-      .map(
-        f => `
-        <div class="file-item-card">
-          <div class="file-item-meta">
-            <span class="file-item-name">📄 ${escapeHtml(f.name)}</span>
-            <span class="file-item-sub">
-              上傳者：${escapeHtml(f.uploadedBy || '組員')} · 
-              ${f.driveUrl ? '已同步至 Google Drive 雲端資料夾' : '已儲存於系統'}
-            </span>
+      .map(f => {
+        const badge = getFileTypeMeta(f.name);
+        return `
+        <div class="file-item-card" style="background:#ecfdf5; border:1.5px solid #10b981; align-items:center;">
+          <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+            <div style="width:42px; height:42px; border-radius:8px; background:${badge.bg}; color:#fff; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; letter-spacing:0.5px;">
+              ${badge.ext}
+            </div>
+            <div class="file-item-meta" style="min-width:0;">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="background:#10b981; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap;">✅ 已上傳</span>
+                <span class="file-item-name" style="color:#065f46; font-weight:700; word-break:break-all;">${escapeHtml(f.name)}</span>
+              </div>
+              <span class="file-item-sub" style="color:#047857;">
+                類型：${badge.label} · 上傳者：${escapeHtml(f.uploadedBy || '組員')}
+              </span>
+            </div>
           </div>
-          <div style="display:flex; gap:8px;">
-            <a href="${escapeAttr(f.url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">開啟 / 下載 ↗</a>
+          <div style="display:flex; gap:6px; flex-shrink:0; flex-wrap:wrap;">
+            <a href="${escapeAttr(f.url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="white-space:nowrap; background:#fff;">開啟 / 下載 ↗</a>
+            <button type="button" class="btn btn-primary btn-sm" style="white-space:nowrap;" onclick="document.getElementById('input-report-file').click()">
+              🔄 重新上傳
+            </button>
           </div>
         </div>
-      `
-      )
+      `;
+      })
       .join('');
   }
 }
@@ -2067,16 +2078,70 @@ function bindEvents() {
   // File Selection & Upload Form
   const fileInput = document.getElementById('input-report-file');
   const fileLabel = document.getElementById('selected-file-label');
+  const dropzoneArea = document.getElementById('dropzone-area');
+  const dropzoneIcon = document.getElementById('dropzone-icon');
+  const dropzoneText = document.getElementById('dropzone-text');
   const uploadBtn = document.getElementById('btn-submit-upload');
+
+  const defaultDropzoneIconHtml = `
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="17 8 12 3 7 8"></polyline>
+      <line x1="12" y1="3" x2="12" y2="15"></line>
+    </svg>
+  `;
+
+  function resetDropzoneUI() {
+    if (dropzoneArea) {
+      dropzoneArea.style.border = '2px dashed #0d9488';
+      dropzoneArea.style.background = '#ffffff';
+    }
+    if (dropzoneIcon) {
+      dropzoneIcon.innerHTML = defaultDropzoneIconHtml;
+    }
+    if (dropzoneText) {
+      dropzoneText.innerHTML = '<strong style="color:#0f766e;">點擊選擇檔案</strong> 或將簡報拖曳至此區域';
+    }
+    if (fileLabel) {
+      fileLabel.textContent = '支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳）';
+    }
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = '開始上傳本組報告檔案';
+    }
+  }
 
   fileInput.addEventListener('change', () => {
     if (fileInput.files && fileInput.files[0]) {
       const f = fileInput.files[0];
-      fileLabel.textContent = `已選擇檔案：${f.name} (${(f.size / 1024).toFixed(1)} KB)`;
+      const meta = getFileTypeMeta(f.name);
+      const sizeStr = f.size >= 1024 * 1024 ? `${(f.size / (1024 * 1024)).toFixed(2)} MB` : `${(f.size / 1024).toFixed(1)} KB`;
+
+      if (dropzoneArea) {
+        dropzoneArea.style.border = `2px solid ${meta.bg}`;
+        dropzoneArea.style.background = meta.lightBg;
+      }
+      if (dropzoneIcon) {
+        dropzoneIcon.innerHTML = `
+          <div style="display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:64px; height:64px; border-radius:14px; background:${meta.bg}; color:#ffffff; box-shadow:0 6px 16px rgba(0,0,0,0.15);">
+            <span style="font-size:18px; font-weight:800; letter-spacing:0.5px; line-height:1.1;">${meta.ext}</span>
+            <span style="font-size:10px; opacity:0.9; margin-top:2px;">已選取</span>
+          </div>
+        `;
+      }
+      if (dropzoneText) {
+        dropzoneText.innerHTML = `
+          <span style="display:inline-block; background:${meta.bg}; color:#fff; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; margin-bottom:4px;">${meta.label}</span><br/>
+          <strong style="color:#0f172a; font-size:15px;">${escapeHtml(f.name)}</strong>
+        `;
+      }
+      if (fileLabel) {
+        fileLabel.innerHTML = `<span style="color:#0f766e; font-weight:600;">檔案大小：${sizeStr} ｜ 請點擊下方按鈕完成上傳（或點擊此區更換檔案）</span>`;
+      }
       uploadBtn.disabled = false;
+      uploadBtn.textContent = `📤 確認上傳此 ${meta.ext} 檔案`;
     } else {
-      fileLabel.textContent = '支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳至雲端）';
-      uploadBtn.disabled = true;
+      resetDropzoneUI();
     }
   });
 
@@ -2101,10 +2166,9 @@ function bindEvents() {
         });
         saveStaticDb();
         fileInput.value = '';
-        fileLabel.textContent = '支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳至雲端）';
-        uploadBtn.disabled = true;
+        resetDropzoneUI();
         renderAll();
-        showToast(`簡報「${file.name}」已新增至本組報告清單！`, 'success');
+        showToast(`簡報「${file.name}」已上傳成功！`, 'success');
       }
       return;
     }
@@ -2114,7 +2178,7 @@ function bindEvents() {
     formData.append('uploadedBy', `${state.user.name} (${state.user.id})`);
 
     uploadBtn.disabled = true;
-    uploadBtn.textContent = '正在上傳檔案至網站與 Google Drive 雲端資料夾...';
+    uploadBtn.textContent = '正在上傳檔案至網站與雲端...';
 
     try {
       const res = await fetch(`/api/groups/${state.user.groupOrder}/upload`, {
@@ -2128,17 +2192,16 @@ function bindEvents() {
       }
 
       fileInput.value = '';
-      fileLabel.textContent = '支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳至雲端）';
+      resetDropzoneUI();
       await fetchPortalData();
       showToast(
-        `簡報「${data.file.name}」上傳成功${data.file.driveUrl ? '，已同步備份至 Google Drive！' : '！'}`,
+        `簡報「${data.file.name}」上傳成功${data.file.driveUrl ? '，已同步備份至雲端！' : '！'}`,
         'success'
       );
     } catch (err) {
       showToast('檔案上傳錯誤：' + err.message, 'error');
     } finally {
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = '開始上傳報告檔案至網站與 Google Drive';
+      resetDropzoneUI();
     }
   });
 
@@ -2202,4 +2265,24 @@ function escapeAttr(str) {
 function truncate(str, maxLen) {
   const s = String(str ?? '');
   return s.length > maxLen ? s.slice(0, maxLen) + '…' : s;
+}
+
+function getFileTypeMeta(filename) {
+  const name = String(filename || '').toLowerCase();
+  if (name.endsWith('.pptx') || name.endsWith('.ppt')) {
+    return { ext: 'PPT', label: 'PowerPoint 簡報檔', bg: '#d24726', lightBg: '#fff7ed' };
+  }
+  if (name.endsWith('.pdf')) {
+    return { ext: 'PDF', label: 'PDF 文件檔', bg: '#dc2626', lightBg: '#fef2f2' };
+  }
+  if (name.endsWith('.docx') || name.endsWith('.doc')) {
+    return { ext: 'DOC', label: 'Word 文件檔', bg: '#2563eb', lightBg: '#eff6ff' };
+  }
+  if (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.webp')) {
+    return { ext: 'IMG', label: '圖片檔案', bg: '#7c3aed', lightBg: '#f5f3ff' };
+  }
+  if (name.endsWith('.zip') || name.endsWith('.rar')) {
+    return { ext: 'ZIP', label: '壓縮檔案', bg: '#d97706', lightBg: '#fffbeb' };
+  }
+  return { ext: 'FILE', label: '報告檔案 / 連結', bg: '#0f766e', lightBg: '#f0fdfa' };
 }

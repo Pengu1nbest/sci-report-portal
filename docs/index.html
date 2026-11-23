@@ -307,16 +307,16 @@
           </div>
 
           <form id="form-upload-file" class="upload-zone-wrapper">
-            <label for="input-report-file" class="upload-dropzone" id="dropzone-area" style="border: 2px dashed #0d9488; background: #ffffff;">
+            <label for="input-report-file" class="upload-dropzone" id="dropzone-area" style="border: 2px dashed #0d9488; background: #ffffff; transition: all 0.2s ease;">
               <input type="file" id="input-report-file" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.png,.jpg" hidden />
-              <div class="dropzone-icon" style="color:#0f766e;">
+              <div class="dropzone-icon" id="dropzone-icon" style="color:#0f766e;">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
               </div>
-              <div class="dropzone-text" style="font-size:15px;">
+              <div class="dropzone-text" id="dropzone-text" style="font-size:15px;">
                 <strong style="color:#0f766e;">點擊選擇檔案</strong> 或將簡報拖曳至此區域
               </div>
               <div class="dropzone-hint" id="selected-file-label">支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳）</div>
