@@ -26,13 +26,13 @@ const DEFAULT_ADMIN_EMAILS = ['s25101114@stu.edu.tw'];
 const GROUP_CLOUD_MAP = {
   1: {
     formId: '1k1G1nApnFEgCr0QEH7OtKkVTp_eKiJU0pXgh6CnUrmY',
-    sheetId: '1JcnHBETp_3OKk2r9eDVUPxgXE4DjB70WtpjxYZKGcQI',
+    sheetId: '1iLbBMufB6H33tuGqE_s9jehTI5vBMi_peE4twQ6ZKxM',
     qrDriveId: '1s2VnwkRl_yswwVG01KZgywqTY93mLYYO',
     emailLast: false
   },
   2: {
     formId: '1iDCH_7F5wEzKe13D5DbBdmAjEIBCUHS_N6hUPhm2PVI',
-    sheetId: '1ll-ijGXgrRDiYWsyxayDiyUdqDW7IaadjrRTdQEZrI4',
+    sheetId: '1-RdHWNoXJj3d1Ty5TlClQf9cNAmYEO4HsUzdXRK46IM',
     qrDriveId: '16zxFHwQrRZMCarBUgQ9u8QgwA43jMYm3',
     emailLast: false
   },
@@ -277,6 +277,19 @@ const INITIAL_DB = {
   ],
   // Real ratings imported from Google Sheets (1~5 scale converted to 20-point scale: score * 4)
   ratings: [
+    // Group 1 real responses (4 responses from 1iLbBMufB6H33tuGqE_s9jehTI5vBMi_peE4twQ6ZKxM)
+    { id: 'r_1_1', groupOrder: 1, reviewerEmail: 's25101109@stu.edu.tw', reviewerName: '謝仁凱', timestamp: '2026/11/16 下午 1:01:26', scores: { content: 20, visuals: 20, delivery: 16, qna: 20, teamwork: 16 }, comment: '' },
+    { id: 'r_1_2', groupOrder: 1, reviewerEmail: 's25101101@stu.edu.tw', reviewerName: '姜毓庭', timestamp: '2026/11/16 下午 1:24:33', scores: { content: 12, visuals: 16, delivery: 12, qna: 12, teamwork: 20 }, comment: '' },
+    { id: 'r_1_3', groupOrder: 1, reviewerEmail: 's25101106@stu.edu.tw', reviewerName: '楊錢秉秝', timestamp: '2026/11/17 上午 9:04:43', scores: { content: 20, visuals: 16, delivery: 16, qna: 20, teamwork: 20 }, comment: '' },
+    { id: 'r_1_4', groupOrder: 1, reviewerEmail: 's25101113@stu.edu.tw', reviewerName: '簡呈凱', timestamp: '2026/11/17 下午 5:26:16', scores: { content: 12, visuals: 12, delivery: 12, qna: 12, teamwork: 12 }, comment: '' },
+
+    // Group 2 real responses (4 responses from 1-RdHWNoXJj3d1Ty5TlClQf9cNAmYEO4HsUzdXRK46IM)
+    { id: 'r_2_1', groupOrder: 2, reviewerEmail: 's25101109@stu.edu.tw', reviewerName: '謝仁凱', timestamp: '2026/11/16 下午 1:01:48', scores: { content: 20, visuals: 16, delivery: 16, qna: 20, teamwork: 20 }, comment: '' },
+    { id: 'r_2_2', groupOrder: 2, reviewerEmail: 's25101101@stu.edu.tw', reviewerName: '姜毓庭', timestamp: '2026/11/16 下午 1:26:50', scores: { content: 16, visuals: 16, delivery: 12, qna: 16, teamwork: 20 }, comment: '' },
+    { id: 'r_2_3', groupOrder: 2, reviewerEmail: 's25101106@stu.edu.tw', reviewerName: '楊錢秉秝', timestamp: '2026/11/17 上午 9:04:11', scores: { content: 20, visuals: 12, delivery: 16, qna: 20, teamwork: 20 }, comment: '' },
+    { id: 'r_2_4', groupOrder: 2, reviewerEmail: 's25101113@stu.edu.tw', reviewerName: '簡呈凱', timestamp: '2026/11/17 下午 5:27:50', scores: { content: 12, visuals: 12, delivery: 12, qna: 12, teamwork: 12 }, comment: '' },
+
+    // Group 3 real responses (14 responses from 1Un0WT3JcqD-Z7Xh5evQ70hUcEvso1tGOqOuwCPjRgSc)
     { id: 'r_3_1', groupOrder: 3, reviewerEmail: 's25101105@stu.edu.tw', reviewerName: '蔡凱宇', timestamp: '2026/11/16 上午 11:46:04', scores: { content: 16, visuals: 8, delivery: 16, qna: 20, teamwork: 20 }, comment: '' },
     { id: 'r_3_2', groupOrder: 3, reviewerEmail: 's25101109@stu.edu.tw', reviewerName: '謝仁凱', timestamp: '2026/11/16 上午 11:46:31', scores: { content: 16, visuals: 12, delivery: 16, qna: 12, teamwork: 20 }, comment: '' },
     { id: 'r_3_3', groupOrder: 3, reviewerEmail: 's24101114@stu.edu.tw', reviewerName: '陳秉瑋', timestamp: '2026/11/16 下午 12:00:36', scores: { content: 12, visuals: 12, delivery: 12, qna: 12, teamwork: 12 }, comment: '' },
@@ -382,6 +395,15 @@ function ensureDbSchema(db) {
     }
     return r;
   });
+
+  // Ensure initial real ratings from Group 1, 2, 3, 4 are present
+  const existingIds = new Set(db.ratings.map(r => r.id));
+  for (const initR of INITIAL_DB.ratings) {
+    if (!existingIds.has(initR.id)) {
+      db.ratings.push(initR);
+      changed = true;
+    }
+  }
 
   if (changed) {
     saveDb(db);

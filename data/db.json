@@ -59,11 +59,11 @@
       "title": "狗1歲不是人類7歲？研究：牠可能已經31歲了",
       "sourceUrl": "https://www.scitw.cc/posts/20260817-19803",
       "formUrl": "https://docs.google.com/forms/d/1k1G1nApnFEgCr0QEH7OtKkVTp_eKiJU0pXgh6CnUrmY/viewform",
-      "sheetId": "1JcnHBETp_3OKk2r9eDVUPxgXE4DjB70WtpjxYZKGcQI",
+      "sheetId": "1iLbBMufB6H33tuGqE_s9jehTI5vBMi_peE4twQ6ZKxM",
       "files": [],
       "updatedAt": "2026-09-14T11:57:16Z",
       "formId": "1k1G1nApnFEgCr0QEH7OtKkVTp_eKiJU0pXgh6CnUrmY",
-      "sheetUrl": "https://docs.google.com/spreadsheets/d/1JcnHBETp_3OKk2r9eDVUPxgXE4DjB70WtpjxYZKGcQI/edit",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1iLbBMufB6H33tuGqE_s9jehTI5vBMi_peE4twQ6ZKxM/edit",
       "qrDriveId": "1s2VnwkRl_yswwVG01KZgywqTY93mLYYO",
       "qrDriveUrl": "https://drive.google.com/file/d/1s2VnwkRl_yswwVG01KZgywqTY93mLYYO/view",
       "qrLocalUrl": "/qrcodes/group-1.png"
@@ -83,11 +83,11 @@
       "title": "如何破解科學新聞的迷思？假資訊與真科學的社群交鋒！",
       "sourceUrl": "https://www.scitw.cc/posts/podcast-ep-226",
       "formUrl": "https://docs.google.com/forms/d/1iDCH_7F5wEzKe13D5DbBdmAjEIBCUHS_N6hUPhm2PVI/viewform",
-      "sheetId": "1ll-ijGXgrRDiYWsyxayDiyUdqDW7IaadjrRTdQEZrI4",
+      "sheetId": "1-RdHWNoXJj3d1Ty5TlClQf9cNAmYEO4HsUzdXRK46IM",
       "files": [],
       "updatedAt": "2026-09-23T08:40:46Z",
       "formId": "1iDCH_7F5wEzKe13D5DbBdmAjEIBCUHS_N6hUPhm2PVI",
-      "sheetUrl": "https://docs.google.com/spreadsheets/d/1ll-ijGXgrRDiYWsyxayDiyUdqDW7IaadjrRTdQEZrI4/edit",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1-RdHWNoXJj3d1Ty5TlClQf9cNAmYEO4HsUzdXRK46IM/edit",
       "qrDriveId": "16zxFHwQrRZMCarBUgQ9u8QgwA43jMYm3",
       "qrDriveUrl": "https://drive.google.com/file/d/16zxFHwQrRZMCarBUgQ9u8QgwA43jMYm3/view",
       "qrLocalUrl": "/qrcodes/group-2.png"
@@ -425,6 +425,126 @@
     }
   ],
   "ratings": [
+    {
+      "id": "r_2_4",
+      "groupOrder": 2,
+      "reviewerEmail": "s25101113@stu.edu.tw",
+      "reviewerName": "簡呈凱",
+      "timestamp": "2026/11/17 下午 5:27:50",
+      "scores": {
+        "content": 12,
+        "visuals": 12,
+        "delivery": 12,
+        "qna": 12,
+        "teamwork": 12
+      },
+      "comment": ""
+    },
+    {
+      "id": "r_2_3",
+      "groupOrder": 2,
+      "reviewerEmail": "s25101106@stu.edu.tw",
+      "reviewerName": "楊錢秉秝",
+      "timestamp": "2026/11/17 上午 9:04:11",
+      "scores": {
+        "content": 20,
+        "visuals": 12,
+        "delivery": 16,
+        "qna": 20,
+        "teamwork": 20
+      },
+      "comment": ""
+    },
+    {
+      "id": "r_2_2",
+      "groupOrder": 2,
+      "reviewerEmail": "s25101101@stu.edu.tw",
+      "reviewerName": "姜毓庭",
+      "timestamp": "2026/11/16 下午 1:26:50",
+      "scores": {
+        "content": 16,
+        "visuals": 16,
+        "delivery": 12,
+        "qna": 16,
+        "teamwork": 20
+      },
+      "comment": ""
+    },
+    {
+      "id": "r_2_1",
+      "groupOrder": 2,
+      "reviewerEmail": "s25101109@stu.edu.tw",
+      "reviewerName": "謝仁凱",
+      "timestamp": "2026/11/16 下午 1:01:48",
+      "scores": {
+        "content": 20,
+        "visuals": 16,
+        "delivery": 16,
+        "qna": 20,
+        "teamwork": 20
+      },
+      "comment": ""
+    },
+    {
+      "id": "r_1_4",
+      "groupOrder": 1,
+      "reviewerEmail": "s25101113@stu.edu.tw",
+      "reviewerName": "簡呈凱",
+      "timestamp": "2026/11/17 下午 5:26:16",
+      "scores": {
+        "content": 12,
+        "visuals": 12,
+        "delivery": 12,
+        "qna": 12,
+        "teamwork": 12
+      },
+      "comment": ""
+    },
+    {
+      "id": "r_1_3",
+      "groupOrder": 1,
+      "reviewerEmail": "s25101106@stu.edu.tw",
+      "reviewerName": "楊錢秉秝",
+      "timestamp": "2026/11/17 上午 9:04:43",
+      "scores": {
+        "content": 20,
+        "visuals": 16,
+        "delivery": 16,
+        "qna": 20,
+        "teamwork": 20
+      },
+      "comment": ""
+    },
+    {
+      "id": "r_1_2",
+      "groupOrder": 1,
+      "reviewerEmail": "s25101101@stu.edu.tw",
+      "reviewerName": "姜毓庭",
+      "timestamp": "2026/11/16 下午 1:24:33",
+      "scores": {
+        "content": 12,
+        "visuals": 16,
+        "delivery": 12,
+        "qna": 12,
+        "teamwork": 20
+      },
+      "comment": ""
+    },
+    {
+      "id": "r_1_1",
+      "groupOrder": 1,
+      "reviewerEmail": "s25101109@stu.edu.tw",
+      "reviewerName": "謝仁凱",
+      "timestamp": "2026/11/16 下午 1:01:26",
+      "scores": {
+        "content": 20,
+        "visuals": 20,
+        "delivery": 16,
+        "qna": 20,
+        "teamwork": 16
+      },
+      "comment": ""
+    },
     {
       "groupOrder": 3,
       "reviewerEmail": "s25101105@stu.edu.tw",
