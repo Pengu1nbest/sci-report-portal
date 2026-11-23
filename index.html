@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>科技文選 — 分組報告與線上評分系統</title>
+  <meta name="description" content="科技文選課程分組報告平台，提供學生 Google 學校帳號登入、查看 12 組評分表（五項指標各 20 分）、線上同儕評分、上傳本組報告簡報與管理員後台帳號管理。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">科技文選 <span>分組報告與評分系統</span></h1>
+          <p class="brand-subtitle">Science &amp; Technology Readings — Report &amp; Peer Assessment Portal</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="btn-sync-google" class="btn btn-outline btn-sm" title="立即將網站名單、評分與題目同步回 Google 試算表總表">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+            <path d="M16 16h5v5"></path>
+          </svg>
+          <span>同步 Google 試算表</span>
+        </button>
+
+        <!-- Active User Pill (Shown when logged in) -->
+        <div id="user-badge" class="user-badge hidden">
+          <div class="user-avatar" id="user-avatar">S</div>
+          <div class="user-meta">
+            <span class="user-name" id="user-display-name">未登入</span>
+            <span class="user-group-tag" id="user-display-group">請先登入</span>
+            <span class="user-admin-tag hidden" id="user-display-admin">系統管理員</span>
+          </div>
+          <button id="btn-switch-user" class="btn-link" title="切換或登出帳號">切換帳號</button>
+        </div>
+
+        <button id="btn-open-login" class="btn btn-primary btn-sm">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+          <span>學生 / 管理員登入</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Hero / Quick Status Strip -->
+    <section class="status-banner" aria-label="課程評分規則與全班統計">
+      <div class="status-banner-left">
+        <div class="rule-title">
+          <span class="tag-accent">評分標準（總分 100 分）</span>
+          <span>五大評分維度・每項滿分 <strong>20 分（各佔 20%）</strong></span>
+        </div>
+        <div class="criteria-chips" id="criteria-chips-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <div class="stats-grid" id="class-stats-strip">
+        <div class="stat-item">
+          <span class="stat-label">平均 (Average)</span>
+          <span class="stat-value" id="stat-avg">0.0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">最高 (Max)</span>
+          <span class="stat-value stat-high" id="stat-max">0.0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">最低 (Min)</span>
+          <span class="stat-value" id="stat-min">0.0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">累積評分筆數</span>
+          <span class="stat-value" id="stat-count">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Primary Workspace Tabs -->
+    <nav class="workspace-tabs" aria-label="功能切換">
+      <div class="tabs-left">
+        <button class="tab-btn active" data-tab="tab-all-scores" id="nav-tab-scores">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          所有組別評分表總覽（12 組）
+        </button>
+        <button class="tab-btn" data-tab="tab-my-group" id="nav-tab-upload">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          上傳本組報告與簡報管理
+          <span id="my-group-tab-badge" class="tab-badge hidden">第 1 組</span>
+        </button>
+        <!-- Admin Tab: Visible when logged in as Admin (e.g. s25101114@stu.edu.tw) -->
+        <button class="tab-btn hidden" data-tab="tab-admin" id="nav-tab-admin">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          管理員後台與帳號管理
+          <span class="tab-badge tab-badge-admin">Admin</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-cloud-links" id="nav-tab-cloud">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          Google 雲端試算表連結
+        </button>
+      </div>
+
+      <div class="tabs-right" id="scores-filter-controls">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" id="search-groups" placeholder="搜尋組別、姓名、學號或報告題目..." />
+        </div>
+        <div class="view-toggle" role="group" aria-label="檢視模式">
+          <button class="view-btn active" id="btn-view-table" title="總表檢視">評分總表</button>
+          <button class="view-btn" id="btn-view-cards" title="組別卡片檢視">詳細卡片</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- TAB 1: All Groups Scoreboard (Table + Cards) -->
+    <section id="tab-all-scores" class="tab-panel active">
+      <!-- Master Grading Sheet View -->
+      <div id="master-table-container" class="surface-card">
+        <div class="card-header-bar">
+          <div>
+            <h2 class="section-title">科技文選 分組報告評分總表</h2>
+            <p class="section-desc">
+              即時同步 Google 試算表總表（五項配分皆為 <strong>20 分</strong>，滿分 <strong>100 分</strong>）。點擊任一組別可檢視每筆評分明細或進行線上評分。
+            </p>
+          </div>
+          <div class="header-meta" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-sm hidden" id="btn-master-export-excel" onclick="exportAllScoresExcel()">
+              📥 匯出分數總覽 Excel (.xlsx)
+            </button>
+            <a href="https://docs.google.com/spreadsheets/d/1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE/edit" target="_blank" rel="noopener" class="ext-link">
+              開啟 Google 試算表總表 ↗
+            </a>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="grading-table" id="grading-master-table">
+            <thead>
+              <tr>
+                <th class="col-order">順序</th>
+                <th class="col-members">組員姓名 / 學號</th>
+                <th class="col-title">報告題目與簡報檔案</th>
+                <th class="col-source">參考來源</th>
+                <th class="col-score">內容掌握<br><small>(20分)</small></th>
+                <th class="col-score">簡報製作<br><small>(20分)</small></th>
+                <th class="col-score">口語台風<br><small>(20分)</small></th>
+                <th class="col-score">時間問答<br><small>(20分)</small></th>
+                <th class="col-score">團隊表現<br><small>(20分)</small></th>
+                <th class="col-total">總分<br><small>(100分)</small></th>
+                <th class="col-actions">評分 / 明細</th>
+              </tr>
+            </thead>
+            <tbody id="grading-table-body">
+              <!-- Populated by JS -->
+            </tbody>
+            <tfoot id="grading-table-foot">
+              <!-- Summary rows: Average, Max, Min -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detailed Cards Grid View -->
+      <div id="groups-cards-container" class="groups-grid hidden">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- TAB 2: Upload Own Group Report -->
+    <section id="tab-my-group" class="tab-panel hidden">
+      <div id="my-group-unauth" class="surface-card empty-state-card">
+        <div class="empty-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h3>請先登入您的報告學生帳號</h3>
+        <p>登入學校 Google 信箱（如 <code>s25101114@stu.edu.tw</code>）或學號後，系統將自動識別您所屬的組別，即可上傳簡報檔案並更新報告題目。</p>
+        <button class="btn btn-primary" id="btn-unauth-login">立即登入學生帳號</button>
+      </div>
+
+      <div id="my-group-workspace" class="my-group-layout hidden">
+        <!-- Left column: Group Identity & Report Metadata Form -->
+        <div class="surface-card">
+          <div class="card-header-bar">
+            <div>
+              <span class="group-order-pill" id="my-group-order-pill">第 1 組</span>
+              <h2 class="section-title" id="my-group-heading">本組報告資訊設定</h2>
+            </div>
+            <span class="sync-indicator">自動同步至 Google 試算表</span>
+          </div>
+
+          <div class="members-roster" id="my-group-members-list">
+            <!-- Rendered by JS -->
+          </div>
+
+          <form id="form-update-report-info" class="form-stack">
+            <div class="form-group">
+              <label for="input-report-title">報告名稱 / 文章題目 <span class="req">*</span></label>
+              <input type="text" id="input-report-title" required placeholder="請輸入您的科學文章或報告名稱" />
+            </div>
+
+            <div class="form-group">
+              <label for="input-report-source">參考文章來源或線上簡報網址（如 Canva / 科技大觀園 URL）</label>
+              <input type="url" id="input-report-source" placeholder="https://www.scitw.cc/posts/... 或 Canva 簡報連結" />
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="btn-save-group-info">
+                儲存並同步更新至 Google 試算表
+              </button>
+            </div>
+          </form>
+
+          <!-- Current Group Score Snapshot -->
+          <div class="my-score-summary" id="my-group-score-snapshot">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Right column: Presentation File Upload & Uploaded Files List -->
+        <div class="surface-card">
+          <div class="card-header-bar">
+            <div>
+              <h2 class="section-title">上傳本組報告簡報檔案</h2>
+              <p class="section-desc">支援 PDF、PPTX、PPT、DOCX 等格式（單檔最大 50MB），上傳後將自動同步備份至課程 Google Drive 資料夾。</p>
+            </div>
+          </div>
+
+          <form id="form-upload-file" class="upload-zone-wrapper">
+            <label for="input-report-file" class="upload-dropzone" id="dropzone-area">
+              <input type="file" id="input-report-file" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.png,.jpg" hidden />
+              <div class="dropzone-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <div class="dropzone-text">
+                <strong>點擊選擇檔案</strong> 或將簡報拖曳至此區域
+              </div>
+              <div class="dropzone-hint" id="selected-file-label">支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳至雲端）</div>
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-upload" disabled>
+              開始上傳報告檔案至網站與 Google Drive
+            </button>
+          </form>
+
+          <div class="uploaded-files-section">
+            <h3 class="subsection-title">本組已上傳的報告與簡報連結</h3>
+            <div id="my-group-files-list" class="files-list">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ADMIN BACKEND & ACCOUNT MANAGEMENT -->
+    <section id="tab-admin" class="tab-panel hidden">
+      <!-- Summary KPI Strip for Admin -->
+      <div class="admin-kpi-grid" id="admin-kpi-strip">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Admin Sub-navigation & Excel Export Action -->
+      <div class="admin-subtabs" style="justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="admin-subtab-btn active" data-admin-section="admin-sec-accounts">
+            👥 帳號與權限管理
+          </button>
+          <button class="admin-subtab-btn" data-admin-section="admin-sec-groups">
+            📑 全組別報告與檔案管理（代傳/編輯）
+          </button>
+          <button class="admin-subtab-btn" data-admin-section="admin-sec-ratings">
+            📊 全部評分明細紀錄管理
+          </button>
+          <button class="admin-subtab-btn" data-admin-section="admin-sec-oauth">
+            🔑 Google 登入與 GitHub Pages 雲端設定
+          </button>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="./sci-report-portal.zip" download="sci-report-portal.zip" class="btn btn-outline">
+            📦 下載完整專案壓縮檔 (.zip)
+          </a>
+          <button type="button" class="btn btn-primary" id="btn-admin-export-excel" onclick="exportAllScoresExcel()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <polyline points="9 15 12 18 15 15"></polyline>
+            </svg>
+            <span>匯出所有組別分數總覽 Excel (.xlsx)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Section 1: Account Management -->
+      <div id="admin-sec-accounts" class="admin-section active">
+        <div class="admin-two-col">
+          <!-- Left: Add New Account Form -->
+          <div class="surface-card">
+            <div class="card-header-bar">
+              <div>
+                <h2 class="section-title" id="admin-account-form-title">新增學生 / 管理員帳號</h2>
+                <p class="section-desc">新增或編輯帳號後，將自動更新對應組別名單並同步至 Google 試算表總表。</p>
+              </div>
+            </div>
+
+            <form id="form-admin-account" class="form-stack">
+              <input type="hidden" id="admin-acc-original-email" value="" />
+
+              <div class="form-group">
+                <label for="admin-acc-id">學號 (Student ID) <span class="req">*</span></label>
+                <input type="text" id="admin-acc-id" required placeholder="例如：25101114" />
+              </div>
+
+              <div class="form-group">
+                <label for="admin-acc-name">學生 / 使用者姓名 <span class="req">*</span></label>
+                <input type="text" id="admin-acc-name" required placeholder="例如：張亦傑" />
+              </div>
+
+              <div class="form-group">
+                <label for="admin-acc-email">學校 Google 信箱 (Email) <span class="req">*</span></label>
+                <input type="email" id="admin-acc-email" required placeholder="例如：s25101114@stu.edu.tw" />
+              </div>
+
+              <div class="form-group">
+                <label for="admin-acc-group">所屬報告組別</label>
+                <select id="admin-acc-group" class="form-select">
+                  <option value="">未分組 / 僅評分帳號</option>
+                  <option value="1">第 1 組</option>
+                  <option value="2">第 2 組</option>
+                  <option value="3">第 3 組</option>
+                  <option value="4">第 4 組</option>
+                  <option value="5">第 5 組</option>
+                  <option value="6">第 6 組</option>
+                  <option value="7">第 7 組</option>
+                  <option value="8">第 8 組</option>
+                  <option value="9">第 9 組</option>
+                  <option value="10">第 10 組</option>
+                  <option value="11">第 11 組</option>
+                  <option value="12">第 12 組</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="admin-acc-role">系統角色權限</label>
+                <select id="admin-acc-role" class="form-select">
+                  <option value="student">一般報告學生 (Student)</option>
+                  <option value="admin">系統管理員 (Admin — 可看後台與管理帳號)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="admin-acc-active">帳號狀態</label>
+                <select id="admin-acc-active" class="form-select">
+                  <option value="true">啟用中 (Active)</option>
+                  <option value="false">停用 (Disabled)</option>
+                </select>
+              </div>
+
+              <div class="form-actions" style="display:flex; gap:8px;">
+                <button type="submit" class="btn btn-primary" id="btn-admin-save-acc" style="flex:1;">
+                  儲存帳號設定
+                </button>
+                <button type="button" class="btn btn-outline hidden" id="btn-admin-cancel-edit">
+                  取消編輯
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right: All Accounts Directory Table -->
+          <div class="surface-card">
+            <div class="card-header-bar">
+              <div>
+                <h2 class="section-title">全班帳號清單與權限管理</h2>
+                <p class="section-desc">目前主管理員：<code>s25101114@stu.edu.tw</code>（張亦傑）。可直接切換管理員權限、調整分組或停用帳號。</p>
+              </div>
+              <div class="search-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="search" id="admin-search-accounts" placeholder="搜尋學號、姓名或信箱..." />
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="grading-table">
+                <thead>
+                  <tr>
+                    <th>組別</th>
+                    <th>姓名 / 學號</th>
+                    <th>學校 Google 信箱</th>
+                    <th>角色權限</th>
+                    <th>狀態</th>
+                    <th>管理操作</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-accounts-tbody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Section 2: Manage Any Group Report & Files -->
+      <div id="admin-sec-groups" class="admin-section hidden">
+        <div class="surface-card">
+          <div class="card-header-bar">
+            <div>
+              <h2 class="section-title">全組別報告題目與簡報檔案管理（管理員專用）</h2>
+              <p class="section-desc">管理員可在此直接修改任一組別（第 1～12 組）的報告題目、參考來源，或代為上傳/移除簡報檔案。</p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="grading-table">
+              <thead>
+                <tr>
+                  <th class="col-order">組別</th>
+                  <th>組員名單</th>
+                  <th>報告題目（可直接修改）</th>
+                  <th>參考來源 URL（可直接修改）</th>
+                  <th>已上傳簡報檔案 / 代傳</th>
+                  <th>儲存操作</th>
+                </tr>
+              </thead>
+              <tbody id="admin-groups-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Section 3: All Peer Ratings Audit & Management -->
+      <div id="admin-sec-ratings" class="admin-section hidden">
+        <div class="surface-card">
+          <div class="card-header-bar">
+            <div>
+              <h2 class="section-title">全班同儕評分明細紀錄管理</h2>
+              <p class="section-desc">檢視所有學生的評分紀錄（五項各 20 分，滿分 100 分），管理員可刪除異常或重複的評分紀錄並自動重算總表。</p>
+            </div>
+            <div>
+              <select id="admin-filter-rating-group" class="form-select">
+                <option value="">顯示全部組別評分</option>
+                <option value="1">第 1 組</option>
+                <option value="2">第 2 組</option>
+                <option value="3">第 3 組</option>
+                <option value="4">第 4 組</option>
+                <option value="5">第 5 組</option>
+                <option value="6">第 6 組</option>
+                <option value="7">第 7 組</option>
+                <option value="8">第 8 組</option>
+                <option value="9">第 9 組</option>
+                <option value="10">第 10 組</option>
+                <option value="11">第 11 組</option>
+                <option value="12">第 12 組</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="grading-table">
+              <thead>
+                <tr>
+                  <th>受評組別</th>
+                  <th>評分者姓名 / 信箱</th>
+                  <th>評分時間</th>
+                  <th class="col-score">內容(20)</th>
+                  <th class="col-score">簡報(20)</th>
+                  <th class="col-score">口語(20)</th>
+                  <th class="col-score">問答(20)</th>
+                  <th class="col-score">團隊(20)</th>
+                  <th class="col-total">總分(100)</th>
+                  <th>評語</th>
+                  <th>管理</th>
+                </tr>
+              </thead>
+              <tbody id="admin-ratings-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Admin Section 4: Google OAuth & GitHub Pages Cloud Backend Settings -->
+      <div id="admin-sec-oauth" class="admin-section hidden">
+        <div class="surface-card">
+          <div class="card-header-bar">
+            <div>
+              <h2 class="section-title">🔑 Google 官方 OAuth 登入與 GitHub Pages 雲端 API 設定</h2>
+              <p class="section-desc">
+                本網站已支援直接架設於 <strong>GitHub Pages</strong>（如 <code>https://pengu1nbest.github.io/sci-report-portal/</code>）。設定 Google OAuth Client ID 後，登入視窗會自動顯示官方「使用 Google 帳號登入」按鈕。
+              </p>
+            </div>
+          </div>
+
+          <form id="form-admin-oauth-config" class="form-stack" style="max-width: 780px;">
+            <div class="form-group">
+              <label for="input-google-client-id">Google OAuth 2.0 Client ID（選填，用於官方 Google 登入驗證按鈕）</label>
+              <input
+                type="text"
+                id="input-google-client-id"
+                placeholder="例如：1234567890-abcdefg.apps.googleusercontent.com"
+              />
+              <small style="color:var(--text-muted); font-size:12px;">
+                於 <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console → 憑證</a> 建立「網頁應用程式」OAuth 用戶端 ID，並將 <code>https://pengu1nbest.github.io</code> 與 <code>http://localhost:3000</code> 加入「已授權的 JavaScript 來源」。
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label for="input-gas-webapp-url">Google Apps Script 網頁應用程式網址（選填，用於 GitHub Pages 免伺服器同步試算表與上傳簡報）</label>
+              <input
+                type="url"
+                id="input-gas-webapp-url"
+                placeholder="例如：https://script.google.com/macros/s/AKfycb.../exec"
+              />
+              <small style="color:var(--text-muted); font-size:12px;">
+                請開啟「科技文選分組報告評分表」試算表 → 擴充功能 → Apps Script，貼上專案內的 <code>google-apps-script.gs</code> 並部署為「網頁應用程式（任何人可存取）」，將產生的網址貼於此處即可。
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                儲存 Google OAuth 與雲端 API 設定
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: Google Drive & Sheets Resource Directory -->
+    <section id="tab-cloud-links" class="tab-panel hidden">
+      <div class="surface-card">
+        <div class="card-header-bar">
+          <div>
+            <h2 class="section-title">Google 雲端硬碟資源與各組評分表連結</h2>
+            <p class="section-desc">本網站與下列 Google Sheets / Google Forms / Google Drive 資料夾即時串接：</p>
+          </div>
+        </div>
+        <div class="cloud-links-grid" id="cloud-resources-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL 1: Student / Admin Account Login -->
+  <div id="modal-login" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="login-modal-title">學生 / 管理員 Google 帳號登入</h2>
+          <p class="modal-subtitle">支援 Google OAuth 官方驗證或輸入學校信箱（如管理員 <code>s25101114@stu.edu.tw</code>）登入，系統自動對應組別與權限</p>
+        </div>
+        <button class="modal-close" data-close-modal="modal-login" aria-label="關閉">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Official Google Sign-In Button Area -->
+        <div class="google-oauth-box" style="margin-bottom:14px; padding:12px 14px; background:var(--bg-page); border:1px solid var(--border-color); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div>
+            <strong style="font-size:13.5px; display:block;">Google 帳號官方驗證登入 (OAuth 2.0)</strong>
+            <span id="google-gsi-hint" style="font-size:12px; color:var(--text-secondary);">使用學校 Google 帳號 (@stu.edu.tw) 一鍵安全驗證身分</span>
+          </div>
+          <div id="google-gsi-button-container"></div>
+        </div>
+
+        <form id="form-login" class="login-form">
+          <div class="form-group">
+            <label for="input-login-account">或輸入學校 Google 信箱 / 學號直接驗證登入</label>
+            <div class="input-with-btn">
+              <input
+                type="text"
+                id="input-login-account"
+                placeholder="例如：s25101114@stu.edu.tw 或 25101114"
+                required
+                autocomplete="username"
+              />
+              <button type="submit" class="btn btn-primary">驗證並登入</button>
+            </div>
+            <p id="login-error-msg" class="form-error hidden"></p>
+          </div>
+        </form>
+
+        <div class="admin-quick-banner">
+          <div>
+            <span class="admin-badge-pill">系統管理員</span>
+            <strong>張亦傑 (s25101114@stu.edu.tw)</strong> — 第 5 組組員兼系統管理員（可進入後台與帳號管理）
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="quickLogin('s25101114@stu.edu.tw')">
+            以管理員身分登入
+          </button>
+        </div>
+
+        <div class="divider-label">
+          <span>或從「科技文選分組名單（第 1～12 組）」快速選擇帳號登入</span>
+        </div>
+
+        <div class="quick-student-picker" id="quick-student-grid">
+          <!-- Populated with all 12 groups and their real members -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Rate a Group & View Detailed Breakdown (5 criteria x 20 points = 100) -->
+  <div id="modal-rate" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="rate-modal-title">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div>
+          <div class="modal-badges">
+            <span class="group-order-pill" id="rate-modal-order">第 1 組</span>
+            <span class="group-members-text" id="rate-modal-members">組員：蕭佳和、陳秉瑋</span>
+          </div>
+          <h2 id="rate-modal-title">報告題目</h2>
+        </div>
+        <button class="modal-close" data-close-modal="modal-rate" aria-label="關閉">&times;</button>
+      </div>
+
+      <div class="modal-body rate-modal-layout">
+        <!-- Left Side: Interactive 20-Point Grading Form -->
+        <div class="rate-form-col">
+          <div class="col-header">
+            <h3>線上評分表（五項各 20 分，滿分 100 分）</h3>
+            <span id="rate-identity-tag" class="identity-tag">評分者：未登入</span>
+          </div>
+
+          <form id="form-rate-group">
+            <input type="hidden" id="rate-group-order-input" />
+            <div id="rate-sliders-container" class="sliders-stack">
+              <!-- 5 criteria sliders (0 to 20 pts, with quick preset buttons 12 / 16 / 18 / 20) -->
+            </div>
+
+            <div class="live-total-bar">
+              <span>本次評分總計（滿分 100 分）</span>
+              <strong class="live-total-number"><span id="rate-live-total">80</span> <small>/ 100 分</small></strong>
+            </div>
+
+            <div class="form-group">
+              <label for="rate-comment-input">評語與建議（選填，將同步至總表）</label>
+              <textarea id="rate-comment-input" rows="2" placeholder="輸入對該組報告內容、簡報設計或台風的具體建議..."></textarea>
+            </div>
+
+            <div id="rate-self-warning" class="alert-box hidden">
+              您屬於本組組員，僅可檢視本組評分明細；請切換至其他組別進行同儕評分。
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-rating">
+              送出評分並同步至 Google 試算表
+            </button>
+          </form>
+        </div>
+
+        <!-- Right Side: Individual Ratings & Criteria Breakdown Table -->
+        <div class="rate-records-col">
+          <div class="col-header">
+            <h3>本組目前收到的評分明細</h3>
+            <span class="records-count-badge" id="rate-records-count">0 筆評分</span>
+          </div>
+
+          <div id="rate-breakdown-bars" class="criteria-bars-box">
+            <!-- 5 criteria horizontal progress bars out of 20 -->
+          </div>
+
+          <div class="records-table-wrap">
+            <table class="mini-records-table">
+              <thead>
+                <tr>
+                  <th>評分者</th>
+                  <th>內容<br><small>(20)</small></th>
+                  <th>簡報<br><small>(20)</small></th>
+                  <th>口語<br><small>(20)</small></th>
+                  <th>問答<br><small>(20)</small></th>
+                  <th>團隊<br><small>(20)</small></th>
+                  <th>總分</th>
+                </tr>
+              </thead>
+              <tbody id="rate-records-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="rate-comments-list" class="comments-feed">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for Admin uploading on behalf of a group -->
+  <input type="file" id="admin-proxy-file-input" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.png,.jpg" hidden />
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

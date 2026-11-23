@@ -1,0 +1,702 @@
+{
+  "criteria": [
+    {
+      "key": "content",
+      "name": "內容掌握與深度",
+      "en": "Content & Scientific Depth",
+      "maxScore": 20,
+      "weight": "20%"
+    },
+    {
+      "key": "visuals",
+      "name": "簡報結構與視覺設計",
+      "en": "Presentation Structure & Visuals",
+      "maxScore": 20,
+      "weight": "20%"
+    },
+    {
+      "key": "delivery",
+      "name": "口語表達與台風",
+      "en": "Oral Delivery & Presence",
+      "maxScore": 20,
+      "weight": "20%"
+    },
+    {
+      "key": "qna",
+      "name": "時間掌控與問答表現",
+      "en": "Time Management & Q&A",
+      "maxScore": 20,
+      "weight": "20%"
+    },
+    {
+      "key": "teamwork",
+      "name": "團隊分工與整體表現",
+      "en": "Teamwork & Overall",
+      "maxScore": 20,
+      "weight": "20%"
+    }
+  ],
+  "groups": [
+    {
+      "order": 1,
+      "name": "第一組",
+      "members": [
+        {
+          "id": "24101107",
+          "name": "蕭佳和",
+          "email": "s24101107@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "24101114",
+          "name": "陳秉瑋",
+          "email": "s24101114@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "狗1歲不是人類7歲？研究：牠可能已經31歲了",
+      "sourceUrl": "https://www.scitw.cc/posts/20260817-19803",
+      "formUrl": "https://docs.google.com/forms/d/1k1G1nApnFEgCr0QEH7OtKkVTp_eKiJU0pXgh6CnUrmY/viewform",
+      "sheetId": "1JcnHBETp_3OKk2r9eDVUPxgXE4DjB70WtpjxYZKGcQI",
+      "files": [],
+      "updatedAt": "2026-09-14T11:57:16Z",
+      "formId": "1k1G1nApnFEgCr0QEH7OtKkVTp_eKiJU0pXgh6CnUrmY",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1JcnHBETp_3OKk2r9eDVUPxgXE4DjB70WtpjxYZKGcQI/edit",
+      "qrDriveId": "1s2VnwkRl_yswwVG01KZgywqTY93mLYYO",
+      "qrDriveUrl": "https://drive.google.com/file/d/1s2VnwkRl_yswwVG01KZgywqTY93mLYYO/view",
+      "qrLocalUrl": "/qrcodes/group-1.png"
+    },
+    {
+      "order": 2,
+      "name": "第二組",
+      "members": [
+        {
+          "id": "24101106",
+          "name": "黃坤烽",
+          "email": "s24101106@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "如何破解科學新聞的迷思？假資訊與真科學的社群交鋒！",
+      "sourceUrl": "https://www.scitw.cc/posts/podcast-ep-226",
+      "formUrl": "https://docs.google.com/forms/d/1iDCH_7F5wEzKe13D5DbBdmAjEIBCUHS_N6hUPhm2PVI/viewform",
+      "sheetId": "1ll-ijGXgrRDiYWsyxayDiyUdqDW7IaadjrRTdQEZrI4",
+      "files": [],
+      "updatedAt": "2026-09-23T08:40:46Z",
+      "formId": "1iDCH_7F5wEzKe13D5DbBdmAjEIBCUHS_N6hUPhm2PVI",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1ll-ijGXgrRDiYWsyxayDiyUdqDW7IaadjrRTdQEZrI4/edit",
+      "qrDriveId": "16zxFHwQrRZMCarBUgQ9u8QgwA43jMYm3",
+      "qrDriveUrl": "https://drive.google.com/file/d/16zxFHwQrRZMCarBUgQ9u8QgwA43jMYm3/view",
+      "qrLocalUrl": "/qrcodes/group-2.png"
+    },
+    {
+      "order": 3,
+      "name": "第三組",
+      "members": [
+        {
+          "id": "25101108",
+          "name": "李宜潔",
+          "email": "s25101108@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101115",
+          "name": "王意晴",
+          "email": "s25101115@stu.edu.tw",
+          "altEmail": "yiqingo211@gmail.com",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "渡渡鳥：我不笨，只是沒學過怕人類",
+      "sourceUrl": "https://www.scitw.cc/",
+      "formUrl": "https://docs.google.com/forms/d/1iCAer4_A1R8JRmQ4lq-hRDhdcK3n8stIQtvbiPJ8pcU/viewform",
+      "sheetId": "1Un0WT3JcqD-Z7Xh5evQ70hUcEvso1tGOqOuwCPjRgSc",
+      "files": [],
+      "updatedAt": "2026-09-23T23:27:09Z",
+      "formId": "1iCAer4_A1R8JRmQ4lq-hRDhdcK3n8stIQtvbiPJ8pcU",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1Un0WT3JcqD-Z7Xh5evQ70hUcEvso1tGOqOuwCPjRgSc/edit",
+      "qrDriveId": "1C04YtVxhsUDHs1Izau_76hEVg5a-AO-F",
+      "qrDriveUrl": "https://drive.google.com/file/d/1C04YtVxhsUDHs1Izau_76hEVg5a-AO-F/view",
+      "qrLocalUrl": "/qrcodes/group-3.png"
+    },
+    {
+      "order": 4,
+      "name": "第四組",
+      "members": [
+        {
+          "id": "25101101",
+          "name": "姜毓庭",
+          "email": "s25101101@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101113",
+          "name": "簡呈凱",
+          "email": "s25101113@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "打打電動，感覺更幸福",
+      "sourceUrl": "https://www.scitw.cc/posts/20240820-17164",
+      "formUrl": "https://docs.google.com/forms/d/1U2lAsOt_y2FCD7u3J0TnisiXtUAr9eSlwgm8u_GZ3P8/viewform",
+      "sheetId": "1crdychJQc_opZUAYIecKSX4oL3TA1Jo1XCfKoXpnXY4",
+      "files": [],
+      "updatedAt": "2026-09-14T13:26:16Z",
+      "formId": "1U2lAsOt_y2FCD7u3J0TnisiXtUAr9eSlwgm8u_GZ3P8",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1crdychJQc_opZUAYIecKSX4oL3TA1Jo1XCfKoXpnXY4/edit",
+      "qrDriveId": "1czLrAUGyY43TMdCraNHiDB4e7J_VfkWZ",
+      "qrDriveUrl": "https://drive.google.com/file/d/1czLrAUGyY43TMdCraNHiDB4e7J_VfkWZ/view",
+      "qrLocalUrl": "/qrcodes/group-4.png"
+    },
+    {
+      "order": 5,
+      "name": "第五組",
+      "members": [
+        {
+          "id": "25101114",
+          "name": "張亦傑",
+          "email": "s25101114@stu.edu.tw",
+          "active": true,
+          "role": "admin"
+        },
+        {
+          "id": "25101128",
+          "name": "唐湘婷",
+          "email": "s25101128@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "纖維不夠，腸道細菌可能開始吃你的腸黏膜",
+      "sourceUrl": "https://www.scitw.cc/posts/20261116-20088",
+      "formUrl": "https://docs.google.com/forms/d/1U5Q28TCVg2M-gsv1ri3C9wUuYTxkJBjzABv1AiY3SkI/viewform",
+      "sheetId": "1cMNadGQ10juZV6XHH7eLpUZyyN6dS2h41Hx2eR_eLOw",
+      "files": [],
+      "updatedAt": "2026-09-22T10:01:13Z",
+      "formId": "1U5Q28TCVg2M-gsv1ri3C9wUuYTxkJBjzABv1AiY3SkI",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1cMNadGQ10juZV6XHH7eLpUZyyN6dS2h41Hx2eR_eLOw/edit",
+      "qrDriveId": "1yJFxq0JlWPTybIQYTqclF1KQwMKr9m3-",
+      "qrDriveUrl": "https://drive.google.com/file/d/1yJFxq0JlWPTybIQYTqclF1KQwMKr9m3-/view",
+      "qrLocalUrl": "/qrcodes/group-5.png"
+    },
+    {
+      "order": 6,
+      "name": "第六組",
+      "members": [
+        {
+          "id": "25101106",
+          "name": "楊錢秉秝",
+          "email": "s25101106@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "跨越死亡之路：地下通道減少80%路殺",
+      "sourceUrl": "https://www.scitw.cc/posts/20250906-18585",
+      "formUrl": "https://docs.google.com/forms/d/1rLj6u7oL1XHZel_IJhdhWjoIcSblLwy5Tr9AMnrfvwI/viewform",
+      "sheetId": "17iq5ikoGaxGZok1AvLVqapfrJ25UnOrTzjel27_A4dc",
+      "files": [],
+      "updatedAt": "2026-09-24T13:47:03Z",
+      "formId": "1rLj6u7oL1XHZel_IJhdhWjoIcSblLwy5Tr9AMnrfvwI",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/17iq5ikoGaxGZok1AvLVqapfrJ25UnOrTzjel27_A4dc/edit",
+      "qrDriveId": "1xEQMSuXYdqB2_ya8g3bFSAvaLN_0TR-Q",
+      "qrDriveUrl": "https://drive.google.com/file/d/1xEQMSuXYdqB2_ya8g3bFSAvaLN_0TR-Q/view",
+      "qrLocalUrl": "/qrcodes/group-6.png"
+    },
+    {
+      "order": 7,
+      "name": "第七組",
+      "members": [
+        {
+          "id": "25101109",
+          "name": "謝仁凱",
+          "email": "s25101109@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101105",
+          "name": "蔡凱宇",
+          "email": "s25101105@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "出門上班一整天，該為家中貓咪開冷氣嗎？",
+      "sourceUrl": "https://www.scitw.cc/posts/20240821-17179",
+      "formUrl": "https://docs.google.com/forms/d/1cU12RfHYHDmfs5GHxkDfQNGpyWmIdtLwSHRBCM9dAgo/viewform",
+      "sheetId": "1bImwMoWwA2aDM7XEKP852tirwU0439xT3A840wWmGZ8",
+      "files": [],
+      "updatedAt": "2026-09-22T10:36:58Z",
+      "formId": "1cU12RfHYHDmfs5GHxkDfQNGpyWmIdtLwSHRBCM9dAgo",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1bImwMoWwA2aDM7XEKP852tirwU0439xT3A840wWmGZ8/edit",
+      "qrDriveId": "13H0XLhS_oUS2N44hXRThAnXFt17XT0x-",
+      "qrDriveUrl": "https://drive.google.com/file/d/13H0XLhS_oUS2N44hXRThAnXFt17XT0x-/view",
+      "qrLocalUrl": "/qrcodes/group-7.png"
+    },
+    {
+      "order": 8,
+      "name": "第八組",
+      "members": [
+        {
+          "id": "25101117",
+          "name": "武文成",
+          "email": "s25101117@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101120",
+          "name": "阮黃如氏竹玲",
+          "email": "s25101120@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "臺灣海上犯罪網絡特徵與行為模式",
+      "sourceUrl": "https://www.scitw.cc/posts/20240813-17139",
+      "formUrl": "https://docs.google.com/forms/d/12SvrV85dfBoywXFnXeoYVGR-Vdj8FSdpGhDOOds6JGI/viewform",
+      "sheetId": "1zOl3hwW0CdH46zPCuJhhyh7lyqZvf0I4sozhUYHid7E",
+      "files": [],
+      "updatedAt": "2026-09-17T10:57:14Z",
+      "formId": "12SvrV85dfBoywXFnXeoYVGR-Vdj8FSdpGhDOOds6JGI",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1zOl3hwW0CdH46zPCuJhhyh7lyqZvf0I4sozhUYHid7E/edit",
+      "qrDriveId": "1m1IWbq0Xz6SoZrCX2tjNYzUesnxkg623",
+      "qrDriveUrl": "https://drive.google.com/file/d/1m1IWbq0Xz6SoZrCX2tjNYzUesnxkg623/view",
+      "qrLocalUrl": "/qrcodes/group-8.png"
+    },
+    {
+      "order": 9,
+      "name": "第九組",
+      "members": [
+        {
+          "id": "25101126",
+          "name": "阮文武",
+          "email": "s25101126@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101127",
+          "name": "阮俊英",
+          "email": "s25101127@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "霸王龍體溫之謎簡報",
+      "sourceUrl": "",
+      "formUrl": "https://docs.google.com/forms/d/1t7LSn_2vS4hVum6EJp8Goa40-MGSzrpb5x61P0Uc1Y4/viewform",
+      "sheetId": "1g13goJHeKAtKZDDX07NnP4GxlAkXfVQ-w0gGIZM18AQ",
+      "files": [],
+      "updatedAt": "2026-09-22T21:35:57Z",
+      "formId": "1t7LSn_2vS4hVum6EJp8Goa40-MGSzrpb5x61P0Uc1Y4",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1g13goJHeKAtKZDDX07NnP4GxlAkXfVQ-w0gGIZM18AQ/edit",
+      "qrDriveId": "1lcVOVieYDFqjYf8N4Qem_IVMO3ZXjXg6",
+      "qrDriveUrl": "https://drive.google.com/file/d/1lcVOVieYDFqjYf8N4Qem_IVMO3ZXjXg6/view",
+      "qrLocalUrl": "/qrcodes/group-9.png"
+    },
+    {
+      "order": 10,
+      "name": "第十組",
+      "members": [
+        {
+          "id": "25101118",
+          "name": "團氏秋紅",
+          "email": "s25101118@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101119",
+          "name": "阮氏玄鶬",
+          "email": "s25101119@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "早餐太晚吃會影響壽命？",
+      "sourceUrl": "https://www.scitw.cc/posts/20260824-19830",
+      "formUrl": "https://docs.google.com/forms/d/1xyTxaLaVK4cwVgqMEitM9pLPUGvNtvQG6_og7jTyzCQ/viewform",
+      "sheetId": "1zmopD7oFqZk5ZQj-wPXyvbMG8MW-v8ROIJD2D7nKgkI",
+      "files": [],
+      "updatedAt": "2026-09-17T11:33:33Z",
+      "formId": "1xyTxaLaVK4cwVgqMEitM9pLPUGvNtvQG6_og7jTyzCQ",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1zmopD7oFqZk5ZQj-wPXyvbMG8MW-v8ROIJD2D7nKgkI/edit",
+      "qrDriveId": "1LAFKZimTNDruVMn0HNsTCcOi5Wg9rrSx",
+      "qrDriveUrl": "https://drive.google.com/file/d/1LAFKZimTNDruVMn0HNsTCcOi5Wg9rrSx/view",
+      "qrLocalUrl": "/qrcodes/group-10.png"
+    },
+    {
+      "order": 11,
+      "name": "第十一組",
+      "members": [
+        {
+          "id": "25101122",
+          "name": "阮氏夢兒",
+          "email": "s25101122@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101123",
+          "name": "阮氏明書",
+          "email": "s25101123@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "沒抽菸也會中招！這種罕見基因讓肺癌風險狂飆60倍",
+      "sourceUrl": "https://www.scitw.cc/posts/20260918-19914",
+      "formUrl": "https://docs.google.com/forms/d/1NWGuJg57xdfXzKcc0gVhQ9epwCuwWnVbGsIHhbmOG9Y/viewform",
+      "sheetId": "1jdl29m-v08PACWHxrmZCRqycmKwGrFVTa6I4P8cDbRM",
+      "files": [],
+      "updatedAt": "2026-09-22T13:50:18Z",
+      "formId": "1NWGuJg57xdfXzKcc0gVhQ9epwCuwWnVbGsIHhbmOG9Y",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1jdl29m-v08PACWHxrmZCRqycmKwGrFVTa6I4P8cDbRM/edit",
+      "qrDriveId": "17u9mkVNZ1GhGo7jTBb8iF4o1gW1ig4AP",
+      "qrDriveUrl": "https://drive.google.com/file/d/17u9mkVNZ1GhGo7jTBb8iF4o1gW1ig4AP/view",
+      "qrLocalUrl": "/qrcodes/group-11.png"
+    },
+    {
+      "order": 12,
+      "name": "第十二組",
+      "members": [
+        {
+          "id": "25101125",
+          "name": "杜氏紅蓉",
+          "email": "s25101125@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        },
+        {
+          "id": "25101124",
+          "name": "阮氏美影",
+          "email": "s25101124@stu.edu.tw",
+          "active": true,
+          "role": "student"
+        }
+      ],
+      "title": "野外實驗發現：鯊魚聽力遠超預期（霸王龍體溫與內溫性研究）",
+      "sourceUrl": "https://canva.link/v1idbtw6d6aixrt",
+      "formUrl": "https://docs.google.com/forms/d/1yETAYtxGfCxRat3H59Pa070Ap5aGL2pQ9iuHb-xAjro/viewform",
+      "sheetId": "1701gKKXLTG_BEc0Vq4R-7B0Y1AN7Ukn4nPELWQuDBW4",
+      "files": [
+        {
+          "id": "canva-12",
+          "name": "Canva 線上簡報 — 野外實驗發現：鯊魚聽力遠超預期",
+          "url": "https://canva.link/v1idbtw6d6aixrt",
+          "type": "link",
+          "uploadedBy": "杜氏紅蓉",
+          "uploadedAt": "2026-09-22T23:42:54Z"
+        }
+      ],
+      "updatedAt": "2026-09-22T23:44:03Z",
+      "formId": "1yETAYtxGfCxRat3H59Pa070Ap5aGL2pQ9iuHb-xAjro",
+      "sheetUrl": "https://docs.google.com/spreadsheets/d/1701gKKXLTG_BEc0Vq4R-7B0Y1AN7Ukn4nPELWQuDBW4/edit",
+      "qrDriveId": "18dSDKOP6JR3og6Mzyvuo0sCoEe-p43AB",
+      "qrDriveUrl": "https://drive.google.com/file/d/18dSDKOP6JR3og6Mzyvuo0sCoEe-p43AB/view",
+      "qrLocalUrl": "/qrcodes/group-12.png"
+    }
+  ],
+  "extraStudents": [
+    {
+      "id": "25101129",
+      "name": "江浩暘",
+      "email": "s25101129@stu.edu.tw",
+      "groupOrder": null,
+      "active": true,
+      "role": "student"
+    },
+    {
+      "id": "25101121",
+      "name": "同學 25101121",
+      "email": "s25101121@stu.edu.tw",
+      "groupOrder": null,
+      "active": true,
+      "role": "student"
+    }
+  ],
+  "ratings": [
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101105@stu.edu.tw",
+      "reviewerName": "蔡凱宇",
+      "timestamp": "2026/11/16 上午 11:46:04",
+      "scores": {
+        "content": 16,
+        "visuals": 8,
+        "delivery": 16,
+        "qna": 20,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_3_1_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101109@stu.edu.tw",
+      "reviewerName": "謝仁凱",
+      "timestamp": "2026/11/16 上午 11:46:31",
+      "scores": {
+        "content": 16,
+        "visuals": 12,
+        "delivery": 16,
+        "qna": 12,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_3_2_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s24101114@stu.edu.tw",
+      "reviewerName": "陳秉瑋",
+      "timestamp": "2026/11/16 下午 12:00:36",
+      "scores": {
+        "content": 12,
+        "visuals": 12,
+        "delivery": 12,
+        "qna": 12,
+        "teamwork": 12
+      },
+      "comment": "",
+      "id": "r_3_3_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101106@stu.edu.tw",
+      "reviewerName": "楊錢秉秝",
+      "timestamp": "2026/11/16 下午 12:00:50",
+      "scores": {
+        "content": 16,
+        "visuals": 12,
+        "delivery": 20,
+        "qna": 16,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_3_4_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101108@stu.edu.tw",
+      "reviewerName": "李宜潔",
+      "timestamp": "2026/11/16 下午 12:00:55",
+      "scores": {
+        "content": 20,
+        "visuals": 12,
+        "delivery": 12,
+        "qna": 16,
+        "teamwork": 16
+      },
+      "comment": "",
+      "id": "r_3_5_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101117@stu.edu.tw",
+      "reviewerName": "武文成",
+      "timestamp": "2026/11/16 下午 12:01:01",
+      "scores": {
+        "content": 20,
+        "visuals": 16,
+        "delivery": 20,
+        "qna": 20,
+        "teamwork": 16
+      },
+      "comment": "",
+      "id": "r_3_6_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101101@stu.edu.tw",
+      "reviewerName": "姜毓庭",
+      "timestamp": "2026/11/16 下午 12:01:04",
+      "scores": {
+        "content": 12,
+        "visuals": 12,
+        "delivery": 12,
+        "qna": 12,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_3_7_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101123@stu.edu.tw",
+      "reviewerName": "阮氏明書",
+      "timestamp": "2026/11/16 下午 12:01:11",
+      "scores": {
+        "content": 20,
+        "visuals": 16,
+        "delivery": 16,
+        "qna": 16,
+        "teamwork": 12
+      },
+      "comment": "",
+      "id": "r_3_8_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101129@stu.edu.tw",
+      "reviewerName": "江浩暘",
+      "timestamp": "2026/11/16 下午 12:01:19",
+      "scores": {
+        "content": 20,
+        "visuals": 16,
+        "delivery": 16,
+        "qna": 20,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_3_9_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101120@stu.edu.tw",
+      "reviewerName": "阮黃如氏竹玲",
+      "timestamp": "2026/11/16 下午 12:01:43",
+      "scores": {
+        "content": 16,
+        "visuals": 16,
+        "delivery": 12,
+        "qna": 16,
+        "teamwork": 16
+      },
+      "comment": "",
+      "id": "r_3_10_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101124@stu.edu.tw",
+      "reviewerName": "阮氏美影",
+      "timestamp": "2026/11/16 下午 12:01:55",
+      "scores": {
+        "content": 20,
+        "visuals": 20,
+        "delivery": 20,
+        "qna": 16,
+        "teamwork": 16
+      },
+      "comment": "",
+      "id": "r_3_11_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "yiqingo211@gmail.com",
+      "reviewerName": "王意晴",
+      "timestamp": "2026/11/16 下午 12:02:06",
+      "scores": {
+        "content": 12,
+        "visuals": 12,
+        "delivery": 8,
+        "qna": 12,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_3_12_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101121@stu.edu.tw",
+      "reviewerName": "同學 25101121",
+      "timestamp": "2026/11/16 下午 1:06:00",
+      "scores": {
+        "content": 12,
+        "visuals": 12,
+        "delivery": 8,
+        "qna": 8,
+        "teamwork": 8
+      },
+      "comment": "",
+      "id": "r_3_13_1795411351519"
+    },
+    {
+      "groupOrder": 3,
+      "reviewerEmail": "s25101113@stu.edu.tw",
+      "reviewerName": "簡呈凱",
+      "timestamp": "2026/11/17 下午 5:28:21",
+      "scores": {
+        "content": 16,
+        "visuals": 12,
+        "delivery": 12,
+        "qna": 12,
+        "teamwork": 16
+      },
+      "comment": "",
+      "id": "r_3_14_1795411351519"
+    },
+    {
+      "groupOrder": 4,
+      "reviewerEmail": "s25101109@stu.edu.tw",
+      "reviewerName": "謝仁凱",
+      "timestamp": "2026/11/16 下午 1:02:13",
+      "scores": {
+        "content": 20,
+        "visuals": 20,
+        "delivery": 16,
+        "qna": 20,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_4_15_1795411351519"
+    },
+    {
+      "groupOrder": 4,
+      "reviewerEmail": "s25101101@stu.edu.tw",
+      "reviewerName": "姜毓庭",
+      "timestamp": "2026/11/16 下午 1:27:24",
+      "scores": {
+        "content": 16,
+        "visuals": 16,
+        "delivery": 16,
+        "qna": 16,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_4_16_1795411351519"
+    },
+    {
+      "groupOrder": 4,
+      "reviewerEmail": "s25101106@stu.edu.tw",
+      "reviewerName": "楊錢秉秝",
+      "timestamp": "2026/11/17 上午 9:03:47",
+      "scores": {
+        "content": 20,
+        "visuals": 20,
+        "delivery": 16,
+        "qna": 16,
+        "teamwork": 20
+      },
+      "comment": "",
+      "id": "r_4_17_1795411351519"
+    },
+    {
+      "groupOrder": 4,
+      "reviewerEmail": "s25101113@stu.edu.tw",
+      "reviewerName": "簡呈凱",
+      "timestamp": "2026/11/17 下午 5:28:59",
+      "scores": {
+        "content": 16,
+        "visuals": 16,
+        "delivery": 12,
+        "qna": 12,
+        "teamwork": 12
+      },
+      "comment": "",
+      "id": "r_4_18_1795411351519"
+    }
+  ],
+  "admins": [
+    "s25101114@stu.edu.tw"
+  ]
+}
