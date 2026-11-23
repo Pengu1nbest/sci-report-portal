@@ -1064,6 +1064,25 @@ app.post('/api/groups/:order/upload', upload.single('file'), async (req, res) =>
   });
 });
 
+// 5b. Delete an uploaded file from own group (or admin)
+app.delete('/api/groups/:order/files/:fileId', (req, res) => {
+  const groupOrder = Number(req.params.order);
+  const fileId = req.params.fileId;
+  const db = loadDb();
+  const group = db.groups.find(g => g.order === groupOrder);
+  if (!group) {
+    return res.status(404).json({ error: '找不到該組別' });
+  }
+  const before = (group.files || []).length;
+  group.files = (group.files || []).filter(f => f.id !== fileId);
+  if (group.files.length === before) {
+    return res.status(404).json({ error: '找不到該檔案紀錄' });
+  }
+  group.updatedAt = new Date().toISOString();
+  saveDb(db);
+  res.json({ success: true, group });
+});
+
 // ==================== ADMIN BACKEND & ACCOUNT MANAGEMENT ROUTES ====================
 
 function verifyAdminMiddleware(req, res, next) {

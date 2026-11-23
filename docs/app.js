@@ -890,6 +890,9 @@ function renderMyGroupWorkspace() {
             <button type="button" class="btn btn-primary btn-sm" style="white-space:nowrap;" onclick="document.getElementById('input-report-file').click()">
               🔄 重新上傳
             </button>
+            <button type="button" class="btn-danger-sm" style="white-space:nowrap;" onclick="deleteMyGroupFile(${myGroup.order}, '${escapeAttr(f.id)}', '${escapeAttr(f.name)}')">
+              🗑️ 移除
+            </button>
           </div>
         </div>
       `;
@@ -897,6 +900,38 @@ function renderMyGroupWorkspace() {
       .join('');
   }
 }
+
+window.deleteMyGroupFile = async function (groupOrder, fileId, fileName) {
+  if (!state.user) return;
+  const confirmed = confirm(`確定要移除已上傳的檔案「${fileName}」嗎？\n\n移除後將從本組報告清單中刪除，需要時可再重新上傳。`);
+  if (!confirmed) return;
+
+  if (state.isStaticMode) {
+    const grp = state.groups.find(g => g.order === Number(groupOrder));
+    if (grp) {
+      grp.files = (grp.files || []).filter(f => f.id !== fileId);
+      saveStaticDb();
+      renderAll();
+      showToast(`已移除檔案「${fileName}」`, 'success');
+    }
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/groups/${groupOrder}/files/${encodeURIComponent(fileId)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || '移除失敗', 'error');
+      return;
+    }
+    await fetchPortalData();
+    showToast(`已成功移除檔案「${fileName}」`, 'success');
+  } catch (err) {
+    showToast('移除失敗：' + err.message, 'error');
+  }
+};
 
 // ==================== 6. ADMIN BACKEND & ACCOUNT MANAGEMENT ====================
 function renderAdminBackend() {
