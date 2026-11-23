@@ -3,19 +3,7 @@
  * 科技文選 — 分組報告與線上評分系統 (Google Apps Script 雲端後端 API)
  * ============================================================================
  * 用途：讓部署於 GitHub Pages 的靜態網站可以直接讀寫 Google Sheets 總表、
- *       寫入各組回覆試算表，並將學生上傳的簡報檔案直接存入 Google Drive 資料夾。
- *
- * 【部署步驟】：
- * 1. 開啟「科技文選分組報告評分表」Google 試算表：
- *    https://docs.google.com/spreadsheets/d/1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE/edit
- * 2. 點選上方選單「擴充功能 (Extensions)」 -> 「Apps Script」。
- * 3. 將本檔案所有程式碼貼入 `Code.gs` 並儲存。
- * 4. 點選右上角「部署 (Deploy)」 -> 「新增部署作業 (New deployment)」。
- * 5. 選取類型：「網頁應用程式 (Web app)」：
- *    - 執行身分 (Execute as)：我 (Me)
- *    - 誰可以存取 (Who has access)：所有人 (Anyone)
- * 6. 部署後複製「網頁應用程式網址 (Web App URL)」，貼到網站管理員後台的
- *    「Google OAuth 與雲端 API 設定」中即可完成雙向自動同步！
+ *       新增或覆寫（更新）各組回覆試算表中的學生評分，並將簡報存入 Google Drive。
  */
 
 const SUMMARY_SHEET_ID = '1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE';
@@ -36,6 +24,12 @@ const GROUP_RESPONSE_SHEETS = {
   12: '1701gKKXLTG_BEc0Vq4R-7B0Y1AN7Ukn4nPELWQuDBW4'
 };
 
+function toFormScale1to5(score20) {
+  const num = Number(score20 || 0);
+  if (num <= 5) return Math.max(1, Math.min(5, Math.round(num)));
+  return Math.max(1, Math.min(5, Math.round(num / 4)));
+}
+
 function doGet(e) {
   return ContentService.createTextOutput(
     JSON.stringify({ status: 'ok', service: '科技文選分組報告與評分系統 GAS API' })
@@ -49,21 +43,39 @@ function doPost(e) {
 
     if (action === 'rate') {
       const { groupOrder, rating, avgScores, commentSummary } = payload;
-      // 1. Append to group response sheet
       const sheetId = GROUP_RESPONSE_SHEETS[groupOrder];
+
+      // 1. Upsert (Update existing row if reviewerEmail already exists, else appendRow)
       if (sheetId && rating) {
         const ss = SpreadsheetApp.openById(sheetId);
         const sheet = ss.getSheets()[0];
         const s = rating.scores;
-        sheet.appendRow([
+        const rowValues = [
           rating.timestamp,
           rating.reviewerEmail,
-          s.content,
-          s.visuals,
-          s.delivery,
-          s.qna,
-          s.teamwork
-        ]);
+          toFormScale1to5(s.content),
+          toFormScale1to5(s.visuals),
+          toFormScale1to5(s.delivery),
+          toFormScale1to5(s.qna),
+          toFormScale1to5(s.teamwork)
+        ];
+
+        const data = sheet.getDataRange().getValues();
+        const targetEmail = String(rating.reviewerEmail || '').trim().toLowerCase();
+        let foundRowIndex = -1;
+        for (let i = 1; i < data.length; i++) {
+          const rowEmail = String(data[i][1] || '').trim().toLowerCase();
+          if (rowEmail === targetEmail) {
+            foundRowIndex = i + 1; // 1-indexed
+            break;
+          }
+        }
+
+        if (foundRowIndex > 1) {
+          sheet.getRange(foundRowIndex, 1, 1, 7).setValues([rowValues]);
+        } else {
+          sheet.appendRow(rowValues);
+        }
       }
 
       // 2. Update master summary sheet row

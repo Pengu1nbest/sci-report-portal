@@ -1622,3 +1622,130 @@ a:hover {
   border-radius: 5px;
   border: 1px solid var(--border-strong);
 }
+
+/* ==================== GOOGLE FORM 1~5 LINEAR SCALE UI ==================== */
+.gform-status-banner {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gform-status-banner.has-existing {
+  background: var(--emerald-soft);
+  color: var(--emerald-text);
+  border: 1px solid #a7f3d0;
+}
+
+.gform-status-banner.new-rating {
+  background: var(--blue-soft);
+  color: var(--blue-text);
+  border: 1px solid #bae6fd;
+}
+
+.gform-question-card {
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.gform-q-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.gform-q-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+.gform-q-en {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: block;
+}
+
+.gform-q-score-readout {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.gform-scale-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg-page);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.gform-scale-end {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.gform-scale-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: space-around;
+}
+
+.gform-scale-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.14s ease;
+}
+
+.gform-scale-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.06);
+}
+
+.gform-scale-btn.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.35);
+}
+
+.my-rated-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--emerald-soft);
+  color: var(--emerald-text);
+  margin-bottom: 4px;
+}

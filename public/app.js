@@ -550,6 +550,16 @@ function getFilteredGroups() {
   });
 }
 
+function findMyExistingRating(group) {
+  if (!state.user || !group || !group.ratings) return null;
+  const myEmail = (state.user.email || '').toLowerCase();
+  const myAlt = (state.user.altEmail || '').toLowerCase();
+  return group.ratings.find(r => {
+    const rev = (r.reviewerEmail || '').toLowerCase();
+    return rev === myEmail || (myAlt && rev === myAlt);
+  });
+}
+
 // 3. Master Grading Table
 function renderMasterTable() {
   const tbody = document.getElementById('grading-table-body');
@@ -559,6 +569,7 @@ function renderMasterTable() {
   tbody.innerHTML = groups
     .map(g => {
       const isMyGroup = state.user && state.user.groupOrder === g.order;
+      const myRating = findMyExistingRating(g);
       const memberNames = g.members.map(m => m.name).join('、');
       const memberIds = g.members.map(m => m.id).join('、');
       const hasScore = g.ratingCount > 0;
@@ -580,6 +591,12 @@ function renderMasterTable() {
 
       const scoreCell = val =>
         hasScore ? `<span class="score-num">${Number(val).toFixed(1)}</span>` : `<span class="score-empty">—</span>`;
+
+      let myRatingTotal = 0;
+      if (myRating && myRating.scores) {
+        const ms = myRating.scores;
+        myRatingTotal = Number(ms.content || 0) + Number(ms.visuals || 0) + Number(ms.delivery || 0) + Number(ms.qna || 0) + Number(ms.teamwork || 0);
+      }
 
       return `
         <tr class="${isMyGroup ? 'is-my-group' : ''}">
@@ -610,8 +627,9 @@ function renderMasterTable() {
             <span class="rating-count-sub">${g.ratingCount} 筆評分</span>
           </td>
           <td>
-            <button class="btn ${isMyGroup ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openRateModal(${g.order})">
-              ${isMyGroup ? '查看明細' : '評分 / 明細'}
+            ${myRating ? `<span class="my-rated-tag">✓ 您已評 ${myRatingTotal} 分</span><br>` : ''}
+            <button class="btn ${isMyGroup ? 'btn-outline' : myRating ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openRateModal(${g.order})">
+              ${isMyGroup ? '查看明細' : myRating ? '修改我的評分' : '立即評分'}
             </button>
           </td>
         </tr>
@@ -647,8 +665,15 @@ function renderGroupCards() {
   container.innerHTML = groups
     .map(g => {
       const isMyGroup = state.user && state.user.groupOrder === g.order;
+      const myRating = findMyExistingRating(g);
       const memberNames = g.members.map(m => `${m.name} (${m.id})`).join('、');
       const hasScore = g.ratingCount > 0;
+
+      let myRatingTotal = 0;
+      if (myRating && myRating.scores) {
+        const ms = myRating.scores;
+        myRatingTotal = Number(ms.content || 0) + Number(ms.visuals || 0) + Number(ms.delivery || 0) + Number(ms.qna || 0) + Number(ms.teamwork || 0);
+      }
 
       const barsHtml = state.criteria
         .map(c => {
@@ -683,6 +708,7 @@ function renderGroupCards() {
               <div>
                 <span class="group-order-pill">第 ${g.order} 組</span>
                 ${isMyGroup ? '<span class="my-group-pill" style="margin-left:6px;">您的組別</span>' : ''}
+                ${myRating ? `<span class="my-rated-tag" style="margin-left:6px;">✓ 您已評 ${myRatingTotal} 分</span>` : ''}
               </div>
               <div style="text-align:right;">
                 <span class="total-pill ${hasScore ? '' : 'unscored'}">
@@ -709,8 +735,8 @@ function renderGroupCards() {
                   : `<span class="score-empty" style="font-size:12px;">尚未提供參考網址</span>`
               }
             </div>
-            <button class="btn ${isMyGroup ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openRateModal(${g.order})">
-              ${isMyGroup ? '檢視本組評分明細' : '線上評分 / 明細'}
+            <button class="btn ${isMyGroup ? 'btn-outline' : myRating ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openRateModal(${g.order})">
+              ${isMyGroup ? '檢視本組評分明細' : myRating ? '修改我的評分 / 明細' : '線上評分 / 明細'}
             </button>
           </div>
         </article>
@@ -1423,7 +1449,14 @@ async function performLogin(studentId, password) {
   }
 }
 
-// 9. Open Rate & Detailed Breakdown Modal for a Group
+// Convert 20-point score to 1~5 Google Form level
+function score20ToLevel5(score20) {
+  const n = Number(score20 || 16);
+  if (n <= 5) return Math.max(1, Math.min(5, Math.round(n)));
+  return Math.max(1, Math.min(5, Math.round(n / 4)));
+}
+
+// 9. Open Rate & Detailed Breakdown Modal for a Group (Google Form 1~5 Linear Scale Style, each 20% = 20 pts)
 window.openRateModal = function (groupOrder) {
   if (!state.user) return;
   const group = state.groups.find(g => g.order === Number(groupOrder));
@@ -1435,80 +1468,71 @@ window.openRateModal = function (groupOrder) {
   document.getElementById('rate-modal-members').textContent = `組員：${group.members.map(m => `${m.name} (${m.id})`).join('、')}`;
   document.getElementById('rate-modal-title').textContent = group.title || '未定';
 
-  const existingRating = (group.ratings || []).find(
-    r => r.reviewerEmail.toLowerCase() === state.user.email.toLowerCase()
-  );
+  const existingRating = findMyExistingRating(group);
   document.getElementById('rate-identity-tag').textContent = `評分者：${state.user.name} (${state.user.id})`;
 
   const initialScores = existingRating
     ? existingRating.scores
     : { content: 16, visuals: 16, delivery: 16, qna: 16, teamwork: 16 };
 
+  const statusBannerHtml = existingRating
+    ? `<div class="gform-status-banner has-existing">
+        <span>✓ 試算表中已有您對此組的評分紀錄（時間：${escapeHtml(existingRating.timestamp)}）</span>
+        <span>可直接修改並同步覆寫</span>
+      </div>`
+    : `<div class="gform-status-banner new-rating">
+        <span>📝 尚未對第 ${group.order} 組評分（請點選 1～5 等第，每格 4 分，滿分 20 分）</span>
+      </div>`;
+
   const slidersContainer = document.getElementById('rate-sliders-container');
-  slidersContainer.innerHTML = state.criteria
-    .map(c => {
-      const val = initialScores[c.key] !== undefined ? initialScores[c.key] : 16;
-      return `
-        <div class="criterion-slider-card">
-          <div class="slider-top">
-            <div>
-              <span class="slider-label-title">${escapeHtml(c.name)}</span>
-              <span class="slider-label-en">${escapeHtml(c.en)}</span>
+  slidersContainer.innerHTML =
+    statusBannerHtml +
+    state.criteria
+      .map(c => {
+        const val20 = initialScores[c.key] !== undefined ? Number(initialScores[c.key]) : 16;
+        const level5 = score20ToLevel5(val20);
+
+        const scaleBtns = [1, 2, 3, 4, 5]
+          .map(
+            lvl => `
+            <button
+              type="button"
+              class="gform-scale-btn ${lvl === level5 ? 'selected' : ''}"
+              id="scale-btn-${c.key}-${lvl}"
+              onclick="selectFormScale('${c.key}', ${lvl})"
+              title="${lvl} 級分（換算 ${lvl * 4} / 20 分）"
+            >
+              ${lvl}
+            </button>
+          `
+          )
+          .join('');
+
+        return `
+          <div class="gform-question-card">
+            <div class="gform-q-header">
+              <div>
+                <span class="gform-q-title">${escapeHtml(c.name)} (${c.weight}) <span class="req">*</span></span>
+                <span class="gform-q-en">${escapeHtml(c.en)}</span>
+              </div>
+              <div class="gform-q-score-readout" id="readout-${c.key}">
+                ${level5} 級分（${level5 * 4} / 20 分）
+              </div>
             </div>
-            <div class="slider-score-box">
-              <input
-                type="number"
-                min="0"
-                max="20"
-                step="1"
-                value="${val}"
-                id="num-score-${c.key}"
-                data-criterion="${c.key}"
-                class="slider-score-input"
-              />
-              <span>/ 20 分</span>
+            <input type="hidden" id="num-score-${c.key}" value="${level5 * 4}" data-level="${level5}" />
+            <div class="gform-scale-row">
+              <span class="gform-scale-end">待加強 (1)</span>
+              <div class="gform-scale-options">
+                ${scaleBtns}
+              </div>
+              <span class="gform-scale-end">極佳 (5)</span>
             </div>
           </div>
-          <div class="slider-controls-row">
-            <input
-              type="range"
-              min="0"
-              max="20"
-              step="1"
-              value="${val}"
-              id="range-score-${c.key}"
-              data-criterion="${c.key}"
-              class="slider-range"
-            />
-            <div class="preset-btns">
-              <button type="button" class="preset-btn" onclick="setCriterionScore('${c.key}', 12)">12</button>
-              <button type="button" class="preset-btn" onclick="setCriterionScore('${c.key}', 16)">16</button>
-              <button type="button" class="preset-btn" onclick="setCriterionScore('${c.key}', 18)">18</button>
-              <button type="button" class="preset-btn" onclick="setCriterionScore('${c.key}', 20)">20</button>
-            </div>
-          </div>
-        </div>
-      `;
-    })
-    .join('');
+        `;
+      })
+      .join('');
 
   document.getElementById('rate-comment-input').value = existingRating ? existingRating.comment || '' : '';
-
-  state.criteria.forEach(c => {
-    const rangeEl = document.getElementById(`range-score-${c.key}`);
-    const numEl = document.getElementById(`num-score-${c.key}`);
-    rangeEl.addEventListener('input', () => {
-      numEl.value = rangeEl.value;
-      updateLiveRateTotal();
-    });
-    numEl.addEventListener('input', () => {
-      let v = Number(numEl.value);
-      if (v < 0) v = 0;
-      if (v > 20) v = 20;
-      rangeEl.value = v;
-      updateLiveRateTotal();
-    });
-  });
 
   updateLiveRateTotal();
 
@@ -1523,8 +1547,8 @@ window.openRateModal = function (groupOrder) {
     selfWarn.classList.add('hidden');
     submitBtn.disabled = false;
     submitBtn.textContent = existingRating
-      ? '更新我的評分並同步至 Google 試算表'
-      : '送出評分並同步至 Google 試算表';
+      ? '🔄 更新我的評分並同步覆寫至 Google 試算表'
+      : '✅ 送出評分並同步寫入 Google 試算表';
   }
 
   document.getElementById('rate-records-count').textContent = `${group.ratingCount} 筆評分`;
@@ -1560,17 +1584,22 @@ window.openRateModal = function (groupOrder) {
       .map(r => {
         const s = r.scores;
         const tot = Number(s.content) + Number(s.visuals) + Number(s.delivery) + Number(s.qna) + Number(s.teamwork);
+        const isMe =
+          state.user &&
+          ((r.reviewerEmail || '').toLowerCase() === (state.user.email || '').toLowerCase() ||
+            (state.user.altEmail && (r.reviewerEmail || '').toLowerCase() === state.user.altEmail.toLowerCase()));
         return `
-          <tr>
+          <tr style="${isMe ? 'background:#f0fdfa;' : ''}">
             <td>
               <strong>${escapeHtml(r.reviewerName || r.reviewerEmail.split('@')[0])}</strong>
+              ${isMe ? '<span class="my-group-pill" style="margin-left:4px;">您</span>' : ''}
               <div style="font-size:10.5px; color:var(--text-muted);">${escapeHtml(r.reviewerEmail)}</div>
             </td>
-            <td>${s.content}</td>
-            <td>${s.visuals}</td>
-            <td>${s.delivery}</td>
-            <td>${s.qna}</td>
-            <td>${s.teamwork}</td>
+            <td>${s.content} <small style="color:var(--text-muted);">(${score20ToLevel5(s.content)})</small></td>
+            <td>${s.visuals} <small style="color:var(--text-muted);">(${score20ToLevel5(s.visuals)})</small></td>
+            <td>${s.delivery} <small style="color:var(--text-muted);">(${score20ToLevel5(s.delivery)})</small></td>
+            <td>${s.qna} <small style="color:var(--text-muted);">(${score20ToLevel5(s.qna)})</small></td>
+            <td>${s.teamwork} <small style="color:var(--text-muted);">(${score20ToLevel5(s.teamwork)})</small></td>
             <td><strong>${tot}</strong></td>
           </tr>
         `;
@@ -1594,14 +1623,24 @@ window.openRateModal = function (groupOrder) {
   openModal('modal-rate');
 };
 
-window.setCriterionScore = function (key, score) {
-  const rangeEl = document.getElementById(`range-score-${key}`);
+window.selectFormScale = function (key, level5) {
   const numEl = document.getElementById(`num-score-${key}`);
-  if (rangeEl && numEl) {
-    rangeEl.value = score;
-    numEl.value = score;
-    updateLiveRateTotal();
+  const readoutEl = document.getElementById(`readout-${key}`);
+  if (numEl) {
+    numEl.value = level5 * 4;
+    numEl.setAttribute('data-level', level5);
   }
+  if (readoutEl) {
+    readoutEl.textContent = `${level5} 級分（${level5 * 4} / 20 分）`;
+  }
+  for (let lvl = 1; lvl <= 5; lvl++) {
+    const btn = document.getElementById(`scale-btn-${key}-${lvl}`);
+    if (btn) {
+      if (lvl === level5) btn.classList.add('selected');
+      else btn.classList.remove('selected');
+    }
+  }
+  updateLiveRateTotal();
 };
 
 function updateLiveRateTotal() {

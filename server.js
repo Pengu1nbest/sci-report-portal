@@ -592,20 +592,146 @@ async function syncSummaryToGoogleSheet(db) {
   }
 }
 
-// Append rating to individual group response Google Sheet if available
-async function appendRatingToGroupSheet(groupOrder, rating) {
+// Convert 20-point score (4..20) to 1..5 Google Form scale
+function toFormScale1to5(score20) {
+  const num = Number(score20 || 0);
+  if (num <= 5) return Math.max(1, Math.min(5, Math.round(num)));
+  return Math.max(1, Math.min(5, Math.round(num / 4)));
+}
+
+// Convert 1..5 Google Form scale (or 0..20) to 20-point scale
+function toPortalScale20(rawVal) {
+  const num = Number(rawVal || 0);
+  if (num <= 5) return num * 4;
+  return num;
+}
+
+// Upsert (Update existing row in-place if reviewerEmail already exists, or Append new row) in Group Response Google Sheet
+async function upsertRatingToGroupSheet(groupOrder, rating, altEmail = '') {
   const sheetCfg = GOOGLE_RESOURCES.groupResponseSheets[groupOrder];
   if (!sheetCfg) return;
 
   const s = rating.scores;
+  const f1 = toFormScale1to5(s.content);
+  const f2 = toFormScale1to5(s.visuals);
+  const f3 = toFormScale1to5(s.delivery);
+  const f4 = toFormScale1to5(s.qna);
+  const f5 = toFormScale1to5(s.teamwork);
+
   const rowValues = sheetCfg.emailLast
-    ? `${rating.timestamp},${s.content},${s.visuals},${s.delivery},${s.qna},${s.teamwork},${rating.reviewerEmail}`
-    : `${rating.timestamp},${rating.reviewerEmail},${s.content},${s.visuals},${s.delivery},${s.qna},${s.teamwork}`;
+    ? `${rating.timestamp},${f1},${f2},${f3},${f4},${f5},${rating.reviewerEmail}`
+    : `${rating.timestamp},${rating.reviewerEmail},${f1},${f2},${f3},${f4},${f5}`;
 
   try {
-    await execFileAsync('gsheets', ['mutate', 'append', sheetCfg.id, '表單回覆 1!A1', rowValues]);
+    // Read existing rows in the group response sheet to check if this student already rated
+    const { stdout } = await execFileAsync('gsheets', [
+      'readonly',
+      'read',
+      sheetCfg.id,
+      '表單回覆 1!A1:G100',
+      '--json'
+    ]);
+    const rows = JSON.parse(stdout || '[]');
+    const targetEmail = (rating.reviewerEmail || '').trim().toLowerCase();
+    const targetAlt = (altEmail || '').trim().toLowerCase();
+    const emailColIdx = sheetCfg.emailLast ? 6 : 1;
+
+    let matchedRowNumber = -1;
+    for (let i = 1; i < rows.length; i++) {
+      const rowEmail = String((rows[i] && rows[i][emailColIdx]) || '').trim().toLowerCase();
+      if (rowEmail && (rowEmail === targetEmail || (targetAlt && rowEmail === targetAlt))) {
+        matchedRowNumber = i + 1; // 1-indexed sheet row
+        break;
+      }
+    }
+
+    if (matchedRowNumber > 1) {
+      // Update existing row in-place!
+      await execFileAsync('gsheets', [
+        'mutate',
+        'write',
+        sheetCfg.id,
+        `表單回覆 1!A${matchedRowNumber}:G${matchedRowNumber}`,
+        rowValues
+      ]);
+    } else {
+      // Append new row
+      await execFileAsync('gsheets', ['mutate', 'append', sheetCfg.id, '表單回覆 1!A1', rowValues]);
+    }
   } catch (err) {
-    console.error(`Failed to append to group ${groupOrder} response sheet:`, err.message);
+    console.error(`Failed to upsert to group ${groupOrder} response sheet:`, err.message);
+  }
+}
+
+// Pull latest responses from all 12 group response Google Sheets into db.ratings
+async function pullRatingsFromAllGroupSheets(db) {
+  const accounts = getAllAccounts(db);
+  let updatedCount = 0;
+
+  for (const [orderStr, sheetCfg] of Object.entries(GOOGLE_RESOURCES.groupResponseSheets)) {
+    const groupOrder = Number(orderStr);
+    try {
+      const { stdout } = await execFileAsync('gsheets', [
+        'readonly',
+        'read',
+        sheetCfg.id,
+        '表單回覆 1!A1:G100',
+        '--json'
+      ]);
+      const rows = JSON.parse(stdout || '[]');
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length < 7) continue;
+        const timestamp = String(r[0] || '').trim();
+        const email = String(sheetCfg.emailLast ? r[6] : r[1] || '').trim();
+        if (!email) continue;
+
+        const c1 = toPortalScale20(sheetCfg.emailLast ? r[1] : r[2]);
+        const c2 = toPortalScale20(sheetCfg.emailLast ? r[2] : r[3]);
+        const c3 = toPortalScale20(sheetCfg.emailLast ? r[3] : r[4]);
+        const c4 = toPortalScale20(sheetCfg.emailLast ? r[4] : r[5]);
+        const c5 = toPortalScale20(sheetCfg.emailLast ? r[5] : r[6]);
+
+        const matchedAcc = accounts.find(
+          a =>
+            a.email.toLowerCase() === email.toLowerCase() ||
+            (a.altEmail && a.altEmail.toLowerCase() === email.toLowerCase())
+        );
+        const reviewerEmail = matchedAcc ? matchedAcc.email : email;
+        const reviewerName = matchedAcc ? matchedAcc.name : email.split('@')[0];
+
+        const existingIdx = db.ratings.findIndex(
+          existing =>
+            existing.groupOrder === groupOrder &&
+            (existing.reviewerEmail.toLowerCase() === reviewerEmail.toLowerCase() ||
+              existing.reviewerEmail.toLowerCase() === email.toLowerCase())
+        );
+
+        if (existingIdx >= 0) {
+          db.ratings[existingIdx].timestamp = timestamp || db.ratings[existingIdx].timestamp;
+          db.ratings[existingIdx].reviewerEmail = reviewerEmail;
+          db.ratings[existingIdx].reviewerName = reviewerName;
+          db.ratings[existingIdx].scores = { content: c1, visuals: c2, delivery: c3, qna: c4, teamwork: c5 };
+        } else {
+          db.ratings.push({
+            id: `r_${groupOrder}_${Date.now()}_${i}`,
+            groupOrder,
+            reviewerEmail,
+            reviewerName,
+            timestamp,
+            scores: { content: c1, visuals: c2, delivery: c3, qna: c4, teamwork: c5 },
+            comment: ''
+          });
+        }
+        updatedCount++;
+      }
+    } catch (e) {
+      console.warn(`Could not pull sheet for group ${groupOrder}:`, e.message);
+    }
+  }
+
+  if (updatedCount > 0) {
+    saveDb(db);
   }
 }
 
@@ -690,7 +816,7 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ user: student });
 });
 
-// 3. Submit or update a rating for a group (20 points per criterion, max 100)
+// 3. Submit or update a rating for a group (1~5 scale x 4 = 20 points per criterion, max 100)
 app.post('/api/groups/:order/rate', async (req, res) => {
   const groupOrder = Number(req.params.order);
   const { reviewerEmail, reviewerName, scores, comment } = req.body;
@@ -715,16 +841,23 @@ app.post('/api/groups/:order/rate', async (req, res) => {
     cleanScores[k] = val;
   }
 
+  const accounts = getAllAccounts(db);
+  const reviewerAcc = accounts.find(a => a.email.toLowerCase() === reviewerEmail.toLowerCase());
+  const altEmail = reviewerAcc && reviewerAcc.altEmail ? reviewerAcc.altEmail : '';
+
   const nowStr = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: true });
   const existingIdx = db.ratings.findIndex(
-    r => r.groupOrder === groupOrder && r.reviewerEmail.toLowerCase() === reviewerEmail.toLowerCase()
+    r =>
+      r.groupOrder === groupOrder &&
+      (r.reviewerEmail.toLowerCase() === reviewerEmail.toLowerCase() ||
+        (altEmail && r.reviewerEmail.toLowerCase() === altEmail.toLowerCase()))
   );
 
   const ratingRecord = {
     id: existingIdx >= 0 ? db.ratings[existingIdx].id : `r_${groupOrder}_${Date.now()}`,
     groupOrder,
     reviewerEmail,
-    reviewerName: reviewerName || reviewerEmail.split('@')[0],
+    reviewerName: reviewerName || (reviewerAcc ? reviewerAcc.name : reviewerEmail.split('@')[0]),
     timestamp: nowStr,
     scores: cleanScores,
     comment: (comment || '').trim()
@@ -741,10 +874,8 @@ app.post('/api/groups/:order/rate', async (req, res) => {
 
   let syncedToGoogle = false;
   try {
+    await upsertRatingToGroupSheet(groupOrder, ratingRecord, altEmail);
     await syncSummaryToGoogleSheet(db);
-    if (!isUpdate) {
-      await appendRatingToGroupSheet(groupOrder, ratingRecord);
-    }
     syncedToGoogle = true;
   } catch (err) {
     console.error('Google Sheets sync warning:', err.message);
@@ -1365,12 +1496,13 @@ app.get('/api/admin/export-excel', verifyAdminMiddleware, async (req, res) => {
   }
 });
 
-// 12. Force sync with Google Sheets
+// 12. Force bidirectional sync with Google Sheets (Pull from 12 response sheets + Push summary)
 app.post('/api/sync-google', async (req, res) => {
   const db = loadDb();
   try {
+    await pullRatingsFromAllGroupSheets(db);
     await syncSummaryToGoogleSheet(db);
-    res.json({ success: true, message: '已成功將所有組別名單、評分（五項各 20 分）與報告連結同步至 Google 試算表總表！' });
+    res.json({ success: true, message: '已成功從 12 組回覆試算表同步最新評分，並更新 Google 試算表總表！' });
   } catch (err) {
     res.status(500).json({ error: `同步失敗: ${err.message}` });
   }
