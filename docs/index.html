@@ -355,15 +355,9 @@
           <button class="admin-subtab-btn" data-admin-section="admin-sec-ratings">
             📊 全部評分明細紀錄管理
           </button>
-          <button class="admin-subtab-btn" data-admin-section="admin-sec-oauth">
-            🔑 Google 登入與 GitHub Pages 雲端設定
-          </button>
         </div>
 
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <a href="./sci-report-portal.zip" download="sci-report-portal.zip" class="btn btn-outline">
-            📦 下載完整專案壓縮檔 (.zip)
-          </a>
           <button type="button" class="btn btn-primary" id="btn-admin-export-excel" onclick="exportAllScoresExcel()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -376,97 +370,15 @@
         </div>
       </div>
 
-      <!-- Admin Section 1: Account Management -->
+      <!-- Admin Section 1: Account Management (Full-Width Table + Modal Form) -->
       <div id="admin-sec-accounts" class="admin-section active">
-        <div class="admin-two-col">
-          <!-- Left: Add New Account Form -->
-          <div class="surface-card">
-            <div class="card-header-bar">
-              <div>
-                <h2 class="section-title" id="admin-account-form-title">新增學生 / 管理員帳號</h2>
-                <p class="section-desc">新增或編輯帳號後，將自動更新對應組別名單並同步至 Google 試算表總表。</p>
-              </div>
+        <div class="surface-card">
+          <div class="card-header-bar">
+            <div>
+              <h2 class="section-title">全班帳號與權限管理</h2>
+              <p class="section-desc">目前預設管理員：老師專用帳號 <code>teacher</code> 與學生管理員 <code>25101114</code>（張亦傑）。密碼皆以 SHA-256 Hash 加密儲存，可點擊「+ 新增帳號」或「編輯 / 重設密碼」開啟表單視窗修改。</p>
             </div>
-
-            <form id="form-admin-account" class="form-stack">
-              <input type="hidden" id="admin-acc-original-email" value="" />
-
-              <div class="form-group">
-                <label for="admin-acc-id">登入帳號 — 學號 (Student ID) <span class="req">*</span></label>
-                <input type="text" id="admin-acc-id" required placeholder="例如：25101114" />
-              </div>
-
-              <div class="form-group">
-                <label for="admin-acc-password">登入密碼 (輸入明文後自動以 SHA-256 Hash 存入 JSON；編輯時留空則不變更)</label>
-                <div class="input-with-btn">
-                  <input type="text" id="admin-acc-password" placeholder="留空自動隨機生成 8 碼並以 SHA-256 Hash 存入 JSON" />
-                  <button type="button" class="btn btn-outline btn-sm" id="btn-gen-random-pwd">隨機產生</button>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="admin-acc-name">學生 / 使用者姓名 <span class="req">*</span></label>
-                <input type="text" id="admin-acc-name" required placeholder="例如：張亦傑" />
-              </div>
-
-              <div class="form-group">
-                <label for="admin-acc-email">學校 Google 信箱 (Email)</label>
-                <input type="email" id="admin-acc-email" placeholder="例如：s25101114@stu.edu.tw" />
-              </div>
-
-              <div class="form-group">
-                <label for="admin-acc-group">所屬報告組別</label>
-                <select id="admin-acc-group" class="form-select">
-                  <option value="">未分組 / 僅評分帳號</option>
-                  <option value="1">第 1 組</option>
-                  <option value="2">第 2 組</option>
-                  <option value="3">第 3 組</option>
-                  <option value="4">第 4 組</option>
-                  <option value="5">第 5 組</option>
-                  <option value="6">第 6 組</option>
-                  <option value="7">第 7 組</option>
-                  <option value="8">第 8 組</option>
-                  <option value="9">第 9 組</option>
-                  <option value="10">第 10 組</option>
-                  <option value="11">第 11 組</option>
-                  <option value="12">第 12 組</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="admin-acc-role">系統角色權限</label>
-                <select id="admin-acc-role" class="form-select">
-                  <option value="student">一般報告學生 (Student)</option>
-                  <option value="admin">系統管理員 (Admin — 可看後台與管理帳號)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="admin-acc-active">帳號狀態</label>
-                <select id="admin-acc-active" class="form-select">
-                  <option value="true">啟用中 (Active)</option>
-                  <option value="false">停用 (Disabled)</option>
-                </select>
-              </div>
-
-              <div class="form-actions" style="display:flex; gap:8px;">
-                <button type="submit" class="btn btn-primary" id="btn-admin-save-acc" style="flex:1;">
-                  儲存帳號與密碼設定
-                </button>
-                <button type="button" class="btn btn-outline hidden" id="btn-admin-cancel-edit">
-                  取消編輯
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Right: All Accounts Directory Table -->
-          <div class="surface-card">
-            <div class="card-header-bar">
-              <div>
-                <h2 class="section-title">全班帳號密碼雜湊清單與權限管理</h2>
-                <p class="section-desc">目前預設管理員：老師專用帳號 <code>teacher</code> 與學生管理員 <code>25101114</code>（張亦傑）。所有密碼皆以 <strong>SHA-256 Hash</strong> 儲存於 JSON 中，可點擊「編輯 / 重設密碼」輸入新密碼重設雜湊值。</p>
-              </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
               <div class="search-box">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="11" cy="11" r="8"></circle>
@@ -474,27 +386,29 @@
                 </svg>
                 <input type="search" id="admin-search-accounts" placeholder="搜尋學號、姓名或信箱..." />
               </div>
+              <button type="button" class="btn btn-primary" id="btn-open-add-account-modal">
+                + 新增帳號
+              </button>
             </div>
+          </div>
 
-            <div class="table-responsive">
-              <table class="grading-table">
-                <thead>
-                  <tr>
-                    <th>組別</th>
-                    <th>姓名</th>
-                    <th>登入帳號 (學號)</th>
-                    <th>密碼雜湊 (SHA-256 Hash)</th>
-                    <th>學校信箱</th>
-                    <th>角色權限</th>
-                    <th>狀態</th>
-                    <th>管理操作</th>
-                  </tr>
-                </thead>
-                <tbody id="admin-accounts-tbody">
-                  <!-- Populated by JS -->
-                </tbody>
-              </table>
-            </div>
+          <div class="table-responsive">
+            <table class="grading-table">
+              <thead>
+                <tr>
+                  <th style="white-space:nowrap;">組別</th>
+                  <th style="white-space:nowrap;">姓名</th>
+                  <th style="white-space:nowrap;">登入帳號 (學號)</th>
+                  <th style="white-space:nowrap;">學校信箱</th>
+                  <th style="white-space:nowrap;">角色權限</th>
+                  <th style="white-space:nowrap;">狀態</th>
+                  <th style="white-space:nowrap;">管理操作</th>
+                </tr>
+              </thead>
+              <tbody id="admin-accounts-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -578,51 +492,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-      <!-- Admin Section 4: Google OAuth & GitHub Pages Cloud Backend Settings -->
-      <div id="admin-sec-oauth" class="admin-section hidden">
-        <div class="surface-card">
-          <div class="card-header-bar">
-            <div>
-              <h2 class="section-title">🔑 Google 官方 OAuth 登入與 GitHub Pages 雲端 API 設定</h2>
-              <p class="section-desc">
-                本網站已支援直接架設於 <strong>GitHub Pages</strong>（如 <code>https://pengu1nbest.github.io/sci-report-portal/</code>）。設定 Google OAuth Client ID 後，登入視窗會自動顯示官方「使用 Google 帳號登入」按鈕。
-              </p>
-            </div>
-          </div>
-
-          <form id="form-admin-oauth-config" class="form-stack" style="max-width: 780px;">
-            <div class="form-group">
-              <label for="input-google-client-id">Google OAuth 2.0 Client ID（選填，用於官方 Google 登入驗證按鈕）</label>
-              <input
-                type="text"
-                id="input-google-client-id"
-                placeholder="例如：1234567890-abcdefg.apps.googleusercontent.com"
-              />
-              <small style="color:var(--text-muted); font-size:12px;">
-                於 <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console → 憑證</a> 建立「網頁應用程式」OAuth 用戶端 ID，並將 <code>https://pengu1nbest.github.io</code> 與 <code>http://localhost:3000</code> 加入「已授權的 JavaScript 來源」。
-              </small>
-            </div>
-
-            <div class="form-group">
-              <label for="input-gas-webapp-url">Google Apps Script 網頁應用程式網址（選填，用於 GitHub Pages 免伺服器同步試算表與上傳簡報）</label>
-              <input
-                type="url"
-                id="input-gas-webapp-url"
-                placeholder="例如：https://script.google.com/macros/s/AKfycb.../exec"
-              />
-              <small style="color:var(--text-muted); font-size:12px;">
-                請開啟「科技文選分組報告評分表」試算表 → 擴充功能 → Apps Script，貼上專案內的 <code>google-apps-script.gs</code> 並部署為「網頁應用程式（任何人可存取）」，將產生的網址貼於此處即可。
-              </small>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">
-                儲存 Google OAuth 與雲端 API 設定
-              </button>
-            </div>
-          </form>
         </div>
       </div>
     </section>
@@ -784,6 +653,92 @@
             <!-- Populated by JS -->
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Admin Add / Edit Account Form -->
+  <div id="modal-admin-account" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="admin-account-form-title">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <div>
+          <h2 id="admin-account-form-title">新增學生 / 管理員帳號</h2>
+          <p class="modal-subtitle">儲存後將自動更新對應組別名單，密碼以 SHA-256 Hash 加密存入 JSON</p>
+        </div>
+        <button class="modal-close" data-close-modal="modal-admin-account" aria-label="關閉">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="form-admin-account" class="form-stack">
+          <input type="hidden" id="admin-acc-original-email" value="" />
+
+          <div class="form-group">
+            <label for="admin-acc-id">登入帳號 — 學號 (Student ID) <span class="req">*</span></label>
+            <input type="text" id="admin-acc-id" required placeholder="例如：25101114" />
+          </div>
+
+          <div class="form-group">
+            <label for="admin-acc-password">登入密碼（輸入新明文密碼將自動雜湊；編輯時留空則維持原密碼）</label>
+            <div class="input-with-btn">
+              <input type="text" id="admin-acc-password" placeholder="留空自動隨機生成 8 碼並以 SHA-256 Hash 存入 JSON" />
+              <button type="button" class="btn btn-outline btn-sm" id="btn-gen-random-pwd">隨機產生</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-acc-name">學生 / 使用者姓名 <span class="req">*</span></label>
+            <input type="text" id="admin-acc-name" required placeholder="例如：張亦傑" />
+          </div>
+
+          <div class="form-group">
+            <label for="admin-acc-email">學校 Google 信箱 (Email)</label>
+            <input type="email" id="admin-acc-email" placeholder="例如：s25101114@stu.edu.tw" />
+          </div>
+
+          <div class="form-group">
+            <label for="admin-acc-group">所屬報告組別</label>
+            <select id="admin-acc-group" class="form-select">
+              <option value="">未分組 / 僅評分帳號</option>
+              <option value="1">第 1 組</option>
+              <option value="2">第 2 組</option>
+              <option value="3">第 3 組</option>
+              <option value="4">第 4 組</option>
+              <option value="5">第 5 組</option>
+              <option value="6">第 6 組</option>
+              <option value="7">第 7 組</option>
+              <option value="8">第 8 組</option>
+              <option value="9">第 9 組</option>
+              <option value="10">第 10 組</option>
+              <option value="11">第 11 組</option>
+              <option value="12">第 12 組</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-acc-role">系統角色權限</label>
+            <select id="admin-acc-role" class="form-select">
+              <option value="student">一般報告學生 (Student)</option>
+              <option value="admin">系統管理員 (Admin — 可看後台與管理帳號)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="admin-acc-active">帳號狀態</label>
+            <select id="admin-acc-active" class="form-select">
+              <option value="true">啟用中 (Active)</option>
+              <option value="false">停用 (Disabled)</option>
+            </select>
+          </div>
+
+          <div class="form-actions" style="display:flex; gap:8px; margin-top:6px;">
+            <button type="submit" class="btn btn-primary" id="btn-admin-save-acc" style="flex:1;">
+              儲存帳號與密碼設定
+            </button>
+            <button type="button" class="btn btn-outline" id="btn-admin-cancel-edit" data-close-modal="modal-admin-account">
+              取消
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

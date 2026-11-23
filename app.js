@@ -931,55 +931,48 @@ function renderAdminBackend() {
         acc.id === '25101114' ||
         acc.id === 'teacher' ||
         acc.email.toLowerCase() === 'teacher@stu.edu.tw';
-      const fullHash = acc.passwordHash || acc.password || '';
-      const shortHashDisplay = fullHash.startsWith('sha256$')
-        ? `sha256$${fullHash.slice(7, 19)}…${fullHash.slice(-6)}`
-        : fullHash;
       return `
         <tr>
-          <td>
-            <span class="group-order-pill">${acc.id === 'teacher' ? '授課老師' : acc.groupOrder ? `第 ${acc.groupOrder} 組` : '未分組'}</span>
+          <td style="white-space:nowrap;">
+            <span class="group-order-pill" style="white-space:nowrap;">${acc.id === 'teacher' ? '授課老師' : acc.groupOrder ? `第 ${acc.groupOrder} 組` : '未分組'}</span>
           </td>
-          <td>
+          <td style="white-space:nowrap;">
             <strong>${escapeHtml(acc.name)}</strong>
           </td>
-          <td style="font-family:var(--font-mono); font-weight:700;">
+          <td style="font-family:var(--font-mono); font-weight:700; white-space:nowrap;">
             ${escapeHtml(acc.id)}
           </td>
-          <td>
-            <span class="pwd-code-badge" title="完整 SHA-256 雜湊值：${escapeAttr(fullHash)}">${escapeHtml(shortHashDisplay)}</span>
-          </td>
-          <td style="font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);">
+          <td style="font-family:var(--font-mono); font-size:12.5px; color:var(--text-secondary); white-space:nowrap;">
             ${escapeHtml(acc.email)}
           </td>
-          <td>
+          <td style="white-space:nowrap;">
             ${
               acc.isAdmin
-                ? '<span class="admin-badge-pill">系統管理員 (Admin)</span>'
-                : '<span class="role-pill-student">一般學生 (Student)</span>'
+                ? '<span class="admin-badge-pill" style="white-space:nowrap;">系統管理員 (Admin)</span>'
+                : '<span class="role-pill-student" style="white-space:nowrap;">一般學生 (Student)</span>'
             }
           </td>
-          <td>
+          <td style="white-space:nowrap;">
             ${
               acc.active !== false
-                ? '<span class="status-pill-active">啟用中</span>'
-                : '<span class="status-pill-disabled">已停用</span>'
+                ? '<span class="status-pill-active" style="white-space:nowrap;">啟用中</span>'
+                : '<span class="status-pill-disabled" style="white-space:nowrap;">已停用</span>'
             }
           </td>
-          <td>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button type="button" class="btn btn-outline btn-sm" onclick="populateAdminEditAccount('${escapeAttr(acc.email)}')">
+          <td style="white-space:nowrap;">
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:nowrap;">
+              <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="populateAdminEditAccount('${escapeAttr(acc.email)}')">
                 編輯 / 重設密碼
               </button>
               ${
                 !isPrimaryAdmin
-                  ? `<button type="button" class="btn btn-outline btn-sm" onclick="toggleAccountAdminRole('${escapeAttr(acc.email)}')">
+                  ? `<button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="toggleAccountAdminRole('${escapeAttr(acc.email)}')">
                       ${acc.isAdmin ? '設為一般學生' : '設為管理員'}
                     </button>
-                    <button type="button" class="btn-danger-sm" onclick="deleteAdminAccount('${escapeAttr(acc.email)}')">
+                    <button type="button" class="btn-danger-sm" style="white-space:nowrap;" onclick="deleteAdminAccount('${escapeAttr(acc.email)}')">
                       刪除
                     </button>`
-                  : `<span style="font-size:11.5px; color:var(--text-muted); padding:4px 6px;">${acc.id === 'teacher' ? '預設老師管理員' : '預設主管理員'}</span>`
+                  : `<span style="font-size:11.5px; color:var(--text-muted); padding:4px 6px; white-space:nowrap;">${acc.id === 'teacher' ? '預設老師管理員' : '預設主管理員'}</span>`
               }
             </div>
           </td>
@@ -1098,8 +1091,8 @@ window.populateAdminEditAccount = function (email) {
   document.getElementById('admin-acc-role').value = acc.isAdmin ? 'admin' : 'student';
   document.getElementById('admin-acc-active').value = acc.active !== false ? 'true' : 'false';
 
-  document.getElementById('btn-admin-save-acc').textContent = '更新帳號與密碼雜湊設定';
-  document.getElementById('btn-admin-cancel-edit').classList.remove('hidden');
+  document.getElementById('btn-admin-save-acc').textContent = '更新帳號與密碼設定';
+  openModal('modal-admin-account');
 };
 
 function resetAdminAccountForm() {
@@ -1115,7 +1108,6 @@ function resetAdminAccountForm() {
   document.getElementById('admin-acc-role').value = 'student';
   document.getElementById('admin-acc-active').value = 'true';
   document.getElementById('btn-admin-save-acc').textContent = '儲存帳號與密碼設定';
-  document.getElementById('btn-admin-cancel-edit').classList.add('hidden');
 }
 
 async function upsertStaticAccount(originalEmail, payload) {
@@ -1826,6 +1818,15 @@ function bindEvents() {
     });
   });
 
+  // Open Add Account Modal Button
+  const openAddAccBtn = document.getElementById('btn-open-add-account-modal');
+  if (openAddAccBtn) {
+    openAddAccBtn.addEventListener('click', () => {
+      resetAdminAccountForm();
+      openModal('modal-admin-account');
+    });
+  }
+
   // Admin Account Create / Edit Form Submit
   document.getElementById('form-admin-account').addEventListener('submit', async e => {
     e.preventDefault();
@@ -1848,6 +1849,7 @@ function bindEvents() {
     if (state.isStaticMode) {
       const { plainGenerated } = await upsertStaticAccount(originalEmail, payload);
       resetAdminAccountForm();
+      closeModal('modal-admin-account');
       renderAll();
       showToast(
         isEdit
@@ -1879,6 +1881,7 @@ function bindEvents() {
       }
 
       resetAdminAccountForm();
+      closeModal('modal-admin-account');
       await fetchPortalData();
       showToast(
         isEdit
