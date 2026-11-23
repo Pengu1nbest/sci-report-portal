@@ -19,8 +19,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const DATA_FILE = path.join(__dirname, 'data', 'db.json');
 
-// Default Admin Accounts
-const DEFAULT_ADMIN_EMAILS = ['s25101114@stu.edu.tw'];
+// Default Admin Accounts (Teacher + Student Admin)
+const DEFAULT_ADMIN_EMAILS = ['teacher@stu.edu.tw', 's25101114@stu.edu.tw'];
 
 // Google Resource IDs (All 12 Groups Forms, Response Sheets, and QR Codes in 19oLtHpGGpNsq_0qR5EDou4x4rB0ANxCH)
 const GROUP_CLOUD_MAP = {
@@ -272,6 +272,7 @@ const INITIAL_DB = {
     }
   ],
   extraStudents: [
+    { id: 'teacher', name: '授課老師', email: 'teacher@stu.edu.tw', password: 'TeAcHeR8', groupOrder: null, role: 'admin', active: true },
     { id: '25101129', name: '江浩暘', email: 's25101129@stu.edu.tw', groupOrder: null, role: 'student', active: true },
     { id: '25101121', name: '同學 25101121', email: 's25101121@stu.edu.tw', groupOrder: null, role: 'student', active: true }
   ],
@@ -388,6 +389,19 @@ function generateRandomPassword(len = 8) {
   }
 
   db.extraStudents = db.extraStudents || [];
+  if (!db.extraStudents.some(ex => ex.id === 'teacher' || ex.email.toLowerCase() === 'teacher@stu.edu.tw')) {
+    db.extraStudents.unshift({
+      id: 'teacher',
+      name: '授課老師',
+      email: 'teacher@stu.edu.tw',
+      password: 'TeAcHeR8',
+      groupOrder: null,
+      role: 'admin',
+      active: true
+    });
+    changed = true;
+  }
+
   for (const ex of db.extraStudents) {
     if (ex.active === undefined) {
       ex.active = true;
@@ -397,7 +411,7 @@ function generateRandomPassword(len = 8) {
       ex.password = generateRandomPassword(8);
       changed = true;
     }
-    const shouldBeAdmin = adminSet.has(ex.email.toLowerCase()) || ex.role === 'admin';
+    const shouldBeAdmin = adminSet.has(ex.email.toLowerCase()) || ex.role === 'admin' || ex.id === 'teacher';
     const targetRole = shouldBeAdmin ? 'admin' : 'student';
     if (ex.role !== targetRole) {
       ex.role = targetRole;
@@ -1084,9 +1098,9 @@ app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req,
   const targetGroupOrder = groupOrder ? Number(groupOrder) : null;
   const targetActive = active !== false;
 
-  // Prevent removing admin privilege from primary admin s25101114@stu.edu.tw if trying to disable self
-  if (originalEmail === 's25101114@stu.edu.tw' && (!targetActive || targetRole !== 'admin')) {
-    return res.status(400).json({ error: '預設系統主管理員 (25101114 / s25101114@stu.edu.tw) 不可被停用或移除管理員權限' });
+  // Prevent removing admin privilege from primary admins (teacher@stu.edu.tw or s25101114@stu.edu.tw)
+  if ((originalEmail === 's25101114@stu.edu.tw' || originalEmail === 'teacher@stu.edu.tw') && (!targetActive || targetRole !== 'admin')) {
+    return res.status(400).json({ error: '預設老師與主管理員帳號 (teacher / 25101114) 不可被停用或移除管理員權限' });
   }
 
   // Locate and remove from current group or extraStudents
@@ -1150,8 +1164,8 @@ app.delete('/api/admin/accounts/:targetEmail', verifyAdminMiddleware, async (req
   const db = req.db;
   const targetEmail = decodeURIComponent(req.params.targetEmail).trim().toLowerCase();
 
-  if (targetEmail === 's25101114@stu.edu.tw') {
-    return res.status(400).json({ error: '預設系統主管理員 (s25101114@stu.edu.tw) 不可刪除' });
+  if (targetEmail === 's25101114@stu.edu.tw' || targetEmail === 'teacher@stu.edu.tw') {
+    return res.status(400).json({ error: '預設老師與主管理員帳號 (teacher / 25101114) 不可刪除' });
   }
 
   let removed = false;

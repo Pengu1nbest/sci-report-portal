@@ -430,6 +430,15 @@
   ],
   "extraStudents": [
     {
+      "id": "teacher",
+      "name": "授課老師",
+      "email": "teacher@stu.edu.tw",
+      "password": "TeAcHeR8",
+      "groupOrder": null,
+      "role": "admin",
+      "active": true
+    },
+    {
       "id": "25101129",
       "name": "江浩暘",
       "email": "s25101129@stu.edu.tw",
@@ -841,6 +850,7 @@
     }
   ],
   "admins": [
+    "teacher@stu.edu.tw",
     "s25101114@stu.edu.tw"
   ]
 }

@@ -65,16 +65,16 @@
           </svg>
         </div>
         <h2>科技文選 — 分組報告與評分入口網站</h2>
-        <p>請輸入您的<strong>學號</strong>與<strong>登入密碼</strong>進行身分驗證，登入後即可查看所有組別評分表並上傳本組報告</p>
+        <p>請輸入您的<strong>學號（或老師專用帳號 <code>teacher</code>）</strong>與<strong>登入密碼</strong>進行身分驗證，登入後即可查看所有組別評分表並上傳或管理報告</p>
       </div>
 
       <form id="form-gate-login" class="form-stack">
         <div class="form-group">
-          <label for="gate-input-student-id">登入帳號（學號 Student ID） <span class="req">*</span></label>
+          <label for="gate-input-student-id">登入帳號（學號 Student ID / 老師帳號 <code>teacher</code>） <span class="req">*</span></label>
           <input
             type="text"
             id="gate-input-student-id"
-            placeholder="請輸入學號，例如：25101114"
+            placeholder="請輸入學號（如 25101114）或老師帳號 teacher"
             required
             autocomplete="username"
           />
@@ -85,7 +85,7 @@
           <input
             type="password"
             id="gate-input-password"
-            placeholder="請輸入 8 碼隨機密碼"
+            placeholder="請輸入 8 碼登入密碼"
             required
             autocomplete="current-password"
           />
@@ -99,7 +99,7 @@
       </form>
 
       <div class="login-gate-footer">
-        <span>系統管理員帳號：學號 <code>25101114</code>（張亦傑）｜ 若忘記密碼請洽詢課程管理員</span>
+        <span>管理員與老師帳號：老師專用帳號 <code>teacher</code> ｜ 學生管理員 <code>25101114</code>（張亦傑）｜ 忘記密碼請洽管理員</span>
       </div>
     </div>
   </section>

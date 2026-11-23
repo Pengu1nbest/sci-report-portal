@@ -1,7 +1,7 @@
 // State Management (Dual-mode: supports both Node.js Backend & Static GitHub Pages + Google Apps Script)
 const state = {
   user: null, // { id, name, email, password, groupOrder, groupName, role, isAdmin, active }
-  admins: ['s25101114@stu.edu.tw'],
+  admins: ['teacher@stu.edu.tw', 's25101114@stu.edu.tw'],
   criteria: [],
   groups: [],
   accounts: [],
@@ -53,8 +53,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ==================== STATIC / LOCAL DB ENGINE (FOR GITHUB PAGES) ====================
 function buildAccountsFromDb(db) {
-  const adminSet = new Set((db.admins || ['s25101114@stu.edu.tw']).map(e => e.toLowerCase()));
+  const adminSet = new Set((db.admins || ['teacher@stu.edu.tw', 's25101114@stu.edu.tw']).map(e => e.toLowerCase()));
   const accounts = [];
+
+  // Ensure teacher account is always present
+  db.extraStudents = db.extraStudents || [];
+  if (!db.extraStudents.some(ex => ex.id === 'teacher' || ex.email.toLowerCase() === 'teacher@stu.edu.tw')) {
+    db.extraStudents.unshift({
+      id: 'teacher',
+      name: '授課老師',
+      email: 'teacher@stu.edu.tw',
+      password: 'TeAcHeR8',
+      groupOrder: null,
+      role: 'admin',
+      active: true
+    });
+  }
+
   for (const g of db.groups || []) {
     for (const m of g.members || []) {
       const isAdmin = adminSet.has(m.email.toLowerCase()) || m.role === 'admin' || m.id === '25101114';
@@ -73,7 +88,7 @@ function buildAccountsFromDb(db) {
     }
   }
   for (const ex of db.extraStudents || []) {
-    const isAdmin = adminSet.has(ex.email.toLowerCase()) || ex.role === 'admin';
+    const isAdmin = adminSet.has(ex.email.toLowerCase()) || ex.role === 'admin' || ex.id === 'teacher';
     accounts.push({
       id: ex.id,
       name: ex.name,
@@ -81,7 +96,7 @@ function buildAccountsFromDb(db) {
       altEmail: ex.altEmail || '',
       password: ex.password || '',
       groupOrder: ex.groupOrder || null,
-      groupName: ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
+      groupName: ex.id === 'teacher' ? '授課教師 / 管理員' : ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
       role: isAdmin ? 'admin' : 'student',
       isAdmin,
       active: ex.active !== false
@@ -239,6 +254,7 @@ function isUserAdmin() {
     state.user.isAdmin ||
       state.user.role === 'admin' ||
       state.user.id === '25101114' ||
+      state.user.id === 'teacher' ||
       (state.admins || []).some(e => e.toLowerCase() === (state.user.email || '').toLowerCase())
   );
 }
@@ -872,11 +888,15 @@ function renderAdminBackend() {
   const accTbody = document.getElementById('admin-accounts-tbody');
   accTbody.innerHTML = filteredAccounts
     .map(acc => {
-      const isPrimaryAdmin = acc.email.toLowerCase() === 's25101114@stu.edu.tw' || acc.id === '25101114';
+      const isPrimaryAdmin =
+        acc.email.toLowerCase() === 's25101114@stu.edu.tw' ||
+        acc.id === '25101114' ||
+        acc.id === 'teacher' ||
+        acc.email.toLowerCase() === 'teacher@stu.edu.tw';
       return `
         <tr>
           <td>
-            <span class="group-order-pill">${acc.groupOrder ? `第 ${acc.groupOrder} 組` : '未分組'}</span>
+            <span class="group-order-pill">${acc.id === 'teacher' ? '授課老師' : acc.groupOrder ? `第 ${acc.groupOrder} 組` : '未分組'}</span>
           </td>
           <td>
             <strong>${escapeHtml(acc.name)}</strong>
@@ -917,7 +937,7 @@ function renderAdminBackend() {
                     <button type="button" class="btn-danger-sm" onclick="deleteAdminAccount('${escapeAttr(acc.email)}')">
                       刪除
                     </button>`
-                  : `<span style="font-size:11.5px; color:var(--text-muted); padding:4px 6px;">預設主管理員</span>`
+                  : `<span style="font-size:11.5px; color:var(--text-muted); padding:4px 6px;">${acc.id === 'teacher' ? '預設老師管理員' : '預設主管理員'}</span>`
               }
             </div>
           </td>
