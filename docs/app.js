@@ -1355,44 +1355,49 @@ window.adminDeleteRating = async function (ratingId) {
   }
 };
 
-// 7. Cloud Resources Directory
+// 7. Cloud Resources Directory (Master Sheet, Roster & Folder are Admin-only; Students only see Form responder links)
 function renderCloudResources() {
   const container = document.getElementById('cloud-resources-list');
-  const masterItems = [
-    {
-      type: 'Google Sheets 總表',
-      title: '科技文選分組報告評分表（12組總表・各項20分 & 表單試算表總連結）',
-      url: 'https://docs.google.com/spreadsheets/d/1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE/edit'
-    },
-    {
-      type: 'Google Sheets 分組名單',
-      title: '科技文選分組 (回覆) — 學生學號與上台順序名單',
-      url: 'https://docs.google.com/spreadsheets/d/1riwmmeEARbTstBruzx5aaF6hWVgNOLRo-wgKhi3MG4I/edit'
-    },
-    {
-      type: 'Google Drive 資料夾',
-      title: '科技文選報告 ( 評分表 & QR Code & 簡報上傳區 )',
-      url: 'https://drive.google.com/drive/folders/19oLtHpGGpNsq_0qR5EDou4x4rB0ANxCH'
-    }
-  ];
+  const isAdmin = isUserAdmin();
 
-  const masterHtml = masterItems
-    .map(
-      item => `
-      <div class="cloud-card">
-        <div>
-          <span class="cloud-card-type">${escapeHtml(item.type)}</span>
-          <div class="cloud-card-title" style="margin-top:4px;">${escapeHtml(item.title)}</div>
+  let masterHtml = '';
+  if (isAdmin) {
+    const masterItems = [
+      {
+        type: 'Google Sheets 總表（僅管理員可見）',
+        title: '科技文選分組報告評分表（12組總表・各項20分 & 表單試算表總連結）',
+        url: 'https://docs.google.com/spreadsheets/d/1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE/edit'
+      },
+      {
+        type: 'Google Sheets 分組名單（僅管理員可見）',
+        title: '科技文選分組 (回覆) — 學生學號與上台順序名單',
+        url: 'https://docs.google.com/spreadsheets/d/1riwmmeEARbTstBruzx5aaF6hWVgNOLRo-wgKhi3MG4I/edit'
+      },
+      {
+        type: 'Google Drive 資料夾（僅管理員可見）',
+        title: '科技文選報告 ( 評分表 & QR Code & 簡報上傳區 )',
+        url: 'https://drive.google.com/drive/folders/19oLtHpGGpNsq_0qR5EDou4x4rB0ANxCH'
+      }
+    ];
+
+    masterHtml = masterItems
+      .map(
+        item => `
+        <div class="cloud-card">
+          <div>
+            <span class="cloud-card-type">${escapeHtml(item.type)}</span>
+            <div class="cloud-card-title" style="margin-top:4px;">${escapeHtml(item.title)}</div>
+          </div>
+          <div>
+            <a href="${escapeAttr(item.url)}" target="_blank" rel="noopener" class="ext-link" style="display:inline-block;">
+              開啟 Google 雲端檔案 ↗
+            </a>
+          </div>
         </div>
-        <div>
-          <a href="${escapeAttr(item.url)}" target="_blank" rel="noopener" class="ext-link" style="display:inline-block;">
-            開啟 Google 雲端檔案 ↗
-          </a>
-        </div>
-      </div>
-    `
-    )
-    .join('');
+      `
+      )
+      .join('');
+  }
 
   const groupCardsHtml = state.groups
     .map(g => {
@@ -1422,14 +1427,18 @@ function renderCloudResources() {
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
             <a href="${escapeAttr(formUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
-              📝 評分表單 (Form) ↗
+              📝 評分表單 (作答者連結) ↗
             </a>
-            <a href="${escapeAttr(sheetUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
-              📊 回覆試算表 (Sheet) ↗
-            </a>
-            <a href="${escapeAttr(qrDriveUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
-              🔳 雲端 QR Code ↗
-            </a>
+            ${
+              isAdmin
+                ? `<a href="${escapeAttr(sheetUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+                    📊 回覆試算表 (Sheet) ↗
+                  </a>
+                  <a href="${escapeAttr(qrDriveUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+                    🔳 雲端 QR Code ↗
+                  </a>`
+                : ''
+            }
           </div>
         </div>
       `;
