@@ -296,33 +296,34 @@
           </div>
         </div>
 
-        <!-- Right column: Presentation File Upload & Uploaded Files List -->
-        <div class="surface-card">
-          <div class="card-header-bar">
+        <!-- Right column: Presentation File Upload & Uploaded Files List (Highlighted Card) -->
+        <div class="surface-card" style="border: 2px solid #0f766e; background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 32%); box-shadow: 0 10px 26px rgba(15, 118, 110, 0.14);">
+          <div class="card-header-bar" style="border-bottom-color: #99f6e4;">
             <div>
-              <h2 class="section-title">上傳本組報告簡報檔案</h2>
-              <p class="section-desc">支援 PDF、PPTX、PPT、DOCX 等格式（單檔最大 50MB），上傳後將自動同步備份至課程 Google Drive 資料夾。</p>
+              <span class="tag-accent" style="display:inline-block; margin-bottom:6px; background:#0f766e; color:#ffffff; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700;">📤 本組簡報繳交區</span>
+              <h2 class="section-title" style="color:#0f766e; font-size:19px;">上傳本組報告簡報檔案</h2>
+              <p class="section-desc">支援 PDF、PPTX、PPT、DOCX 等格式（單檔最大 50MB），上傳後將自動同步備份至課程雲端。</p>
             </div>
           </div>
 
           <form id="form-upload-file" class="upload-zone-wrapper">
-            <label for="input-report-file" class="upload-dropzone" id="dropzone-area">
+            <label for="input-report-file" class="upload-dropzone" id="dropzone-area" style="border: 2px dashed #0d9488; background: #ffffff;">
               <input type="file" id="input-report-file" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.png,.jpg" hidden />
-              <div class="dropzone-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <div class="dropzone-icon" style="color:#0f766e;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
               </div>
-              <div class="dropzone-text">
-                <strong>點擊選擇檔案</strong> 或將簡報拖曳至此區域
+              <div class="dropzone-text" style="font-size:15px;">
+                <strong style="color:#0f766e;">點擊選擇檔案</strong> 或將簡報拖曳至此區域
               </div>
-              <div class="dropzone-hint" id="selected-file-label">支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳至雲端）</div>
+              <div class="dropzone-hint" id="selected-file-label">支援 .pdf, .pptx, .docx（自動命名為「第X組_檔名」上傳）</div>
             </label>
 
-            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-upload" disabled>
-              開始上傳報告檔案至網站與 Google Drive
+            <button type="submit" class="btn btn-primary btn-block" id="btn-submit-upload" style="padding:12px 16px; font-size:15px; font-weight:700;" disabled>
+              開始上傳本組報告檔案
             </button>
           </form>
 
@@ -496,13 +497,13 @@
       </div>
     </section>
 
-    <!-- TAB 4: Google Drive & Sheets Resource Directory -->
+    <!-- TAB 4: Grading Form Responder Links Only -->
     <section id="tab-cloud-links" class="tab-panel hidden">
       <div class="surface-card">
         <div class="card-header-bar">
           <div>
-            <h2 class="section-title">Google 雲端硬碟資源與各組評分表連結</h2>
-            <p class="section-desc">本網站與下列 Google Sheets / Google Forms / Google Drive 資料夾即時串接：</p>
+            <h2 class="section-title">各組線上評分表單連結（作答者專用）</h2>
+            <p class="section-desc">請點選對應組別的評分表單連結進行線上填寫評分：</p>
           </div>
         </div>
         <div class="cloud-links-grid" id="cloud-resources-list">

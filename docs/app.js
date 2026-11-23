@@ -858,10 +858,10 @@ function renderMyGroupWorkspace() {
   const files = myGroup.files || [];
   if (files.length === 0) {
     filesContainer.innerHTML = `
-      <div class="file-item-card">
+      <div class="file-item-card" style="background:#fef2f2; border:1.5px solid #ef4444;">
         <div class="file-item-meta">
-          <span class="file-item-name" style="color:var(--text-muted);">目前尚未上傳簡報檔案</span>
-          <span class="file-item-sub">請使用上方上傳區選擇 PDF 或 PPTX 簡報上傳，系統將自動同步至 Google Drive。</span>
+          <span class="file-item-name" style="color:#dc2626; font-weight:700;">⚠️ 目前尚未上傳簡報檔案</span>
+          <span class="file-item-sub" style="color:#b91c1c;">請盡快使用上方上傳區選擇 PDF 或 PPTX 簡報上傳。</span>
         </div>
       </div>
     `;
@@ -1355,97 +1355,35 @@ window.adminDeleteRating = async function (ratingId) {
   }
 };
 
-// 7. Cloud Resources Directory (Master Sheet, Roster & Folder are Admin-only; Students only see Form responder links)
+// 7. Grading Form Responder Links Only (No QR Codes, No Sheets, No Folders)
 function renderCloudResources() {
   const container = document.getElementById('cloud-resources-list');
-  const isAdmin = isUserAdmin();
-
-  let masterHtml = '';
-  if (isAdmin) {
-    const masterItems = [
-      {
-        type: 'Google Sheets 總表（僅管理員可見）',
-        title: '科技文選分組報告評分表（12組總表・各項20分 & 表單試算表總連結）',
-        url: 'https://docs.google.com/spreadsheets/d/1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE/edit'
-      },
-      {
-        type: 'Google Sheets 分組名單（僅管理員可見）',
-        title: '科技文選分組 (回覆) — 學生學號與上台順序名單',
-        url: 'https://docs.google.com/spreadsheets/d/1riwmmeEARbTstBruzx5aaF6hWVgNOLRo-wgKhi3MG4I/edit'
-      },
-      {
-        type: 'Google Drive 資料夾（僅管理員可見）',
-        title: '科技文選報告 ( 評分表 & QR Code & 簡報上傳區 )',
-        url: 'https://drive.google.com/drive/folders/19oLtHpGGpNsq_0qR5EDou4x4rB0ANxCH'
-      }
-    ];
-
-    masterHtml = masterItems
-      .map(
-        item => `
-        <div class="cloud-card">
-          <div>
-            <span class="cloud-card-type">${escapeHtml(item.type)}</span>
-            <div class="cloud-card-title" style="margin-top:4px;">${escapeHtml(item.title)}</div>
-          </div>
-          <div>
-            <a href="${escapeAttr(item.url)}" target="_blank" rel="noopener" class="ext-link" style="display:inline-block;">
-              開啟 Google 雲端檔案 ↗
-            </a>
-          </div>
-        </div>
-      `
-      )
-      .join('');
-  }
 
   const groupCardsHtml = state.groups
     .map(g => {
       const membersStr = g.members.map(m => `${m.name}(${m.id})`).join('、');
       const formUrl = g.formUrl || '#';
-      const sheetUrl = g.sheetUrl || (g.sheetId ? `https://docs.google.com/spreadsheets/d/${g.sheetId}/edit` : '#');
-      const qrDriveUrl = g.qrDriveUrl || '#';
-      const qrLocalUrl = `./qrcodes/group-${g.order}.png`;
 
       return `
         <div class="cloud-card" style="background: var(--bg-surface);">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-            <div style="flex:1;">
-              <span class="cloud-card-type">第 ${g.order} 組（${escapeHtml(g.name)}）</span>
-              <div class="cloud-card-title" style="margin-top:4px;">${escapeHtml(g.title || '未定')}</div>
-              <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">
-                組員：${escapeHtml(membersStr)}
-              </div>
+          <div>
+            <span class="cloud-card-type">第 ${g.order} 組（${escapeHtml(g.name)}）</span>
+            <div class="cloud-card-title" style="margin-top:4px;">${escapeHtml(g.title || '未定')}</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">
+              組員：${escapeHtml(membersStr)}
             </div>
-            <a href="${escapeAttr(qrLocalUrl)}" target="_blank" rel="noopener" title="點擊放大第 ${g.order} 組 QR Code">
-              <img
-                src="${escapeAttr(qrLocalUrl)}"
-                alt="第 ${g.order} 組 QR Code"
-                style="width:74px; height:74px; object-fit:contain; border:1px solid var(--border-color); border-radius:6px; background:#fff; padding:2px;"
-              />
-            </a>
           </div>
-          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+          <div style="margin-top:8px;">
             <a href="${escapeAttr(formUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
-              📝 評分表單 (作答者連結) ↗
+              📝 開啟第 ${g.order} 組評分表單 ↗
             </a>
-            ${
-              isAdmin
-                ? `<a href="${escapeAttr(sheetUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
-                    📊 回覆試算表 (Sheet) ↗
-                  </a>
-                  <a href="${escapeAttr(qrDriveUrl)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
-                    🔳 雲端 QR Code ↗
-                  </a>`
-                : ''
-            }
           </div>
         </div>
       `;
     })
     .join('');
 
-  container.innerHTML = masterHtml + groupCardsHtml;
+  container.innerHTML = groupCardsHtml;
 }
 
 // 8. Authenticate with Student ID + Password (verifies SHA-256 password hash)
