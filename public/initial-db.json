@@ -47,7 +47,8 @@
           "email": "s24101107@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "cZNWFh7B"
+          "password": "sha256$c6ff0656405bb69bf70fc27cd46ebcfe2866af33605c2906bbea268fb36b9770",
+          "passwordHash": "sha256$c6ff0656405bb69bf70fc27cd46ebcfe2866af33605c2906bbea268fb36b9770"
         },
         {
           "id": "24101114",
@@ -55,7 +56,8 @@
           "email": "s24101114@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "gxcCBSBy"
+          "password": "sha256$bf1182222bf36f221ebbc4403f2e9f97a70725584631c2ddb93bf1480db346d5",
+          "passwordHash": "sha256$bf1182222bf36f221ebbc4403f2e9f97a70725584631c2ddb93bf1480db346d5"
         }
       ],
       "title": "狗1歲不是人類7歲？研究：牠可能已經31歲了",
@@ -80,7 +82,8 @@
           "email": "s24101106@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "YdyQqRL7"
+          "password": "sha256$98a18b4538a25a617c8dbb4f0e5da3e31694460e82b6d8fea3a871ec689022f9",
+          "passwordHash": "sha256$98a18b4538a25a617c8dbb4f0e5da3e31694460e82b6d8fea3a871ec689022f9"
         }
       ],
       "title": "如何破解科學新聞的迷思？假資訊與真科學的社群交鋒！",
@@ -105,7 +108,8 @@
           "email": "s25101108@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "MSnaQwVE"
+          "password": "sha256$be6e7571baa2368348bcc69f3db25715a1750740fc746af9f5e53e6c0bdb3d7b",
+          "passwordHash": "sha256$be6e7571baa2368348bcc69f3db25715a1750740fc746af9f5e53e6c0bdb3d7b"
         },
         {
           "id": "25101115",
@@ -114,7 +118,8 @@
           "altEmail": "yiqingo211@gmail.com",
           "active": true,
           "role": "student",
-          "password": "E5FwC2Pt"
+          "password": "sha256$af19be6561b16e625f6e98626a9bcffb795ae2eb47cc03e07b5cf5e474911b94",
+          "passwordHash": "sha256$af19be6561b16e625f6e98626a9bcffb795ae2eb47cc03e07b5cf5e474911b94"
         }
       ],
       "title": "渡渡鳥：我不笨，只是沒學過怕人類",
@@ -139,7 +144,8 @@
           "email": "s25101101@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "hYKhiUHH"
+          "password": "sha256$1a23a104d0de1ac59a1600876a57ec666402d3be2d0dade1ffec1240bce2de68",
+          "passwordHash": "sha256$1a23a104d0de1ac59a1600876a57ec666402d3be2d0dade1ffec1240bce2de68"
         },
         {
           "id": "25101113",
@@ -147,7 +153,8 @@
           "email": "s25101113@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "4aNcT2V2"
+          "password": "sha256$5b930f4a0779031ed2e42077d4bb1a8686c6b2e7ab5e439eba107faca0cd0e05",
+          "passwordHash": "sha256$5b930f4a0779031ed2e42077d4bb1a8686c6b2e7ab5e439eba107faca0cd0e05"
         }
       ],
       "title": "打打電動，感覺更幸福",
@@ -172,7 +179,8 @@
           "email": "s25101114@stu.edu.tw",
           "active": true,
           "role": "admin",
-          "password": "AtZXcAzc"
+          "password": "sha256$f502dcb4fafbfd61fc6bcdae2ce2bedb02c485da7ba87e203f6b4c0f523fb58b",
+          "passwordHash": "sha256$f502dcb4fafbfd61fc6bcdae2ce2bedb02c485da7ba87e203f6b4c0f523fb58b"
         },
         {
           "id": "25101128",
@@ -180,7 +188,8 @@
           "email": "s25101128@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "xgkjUERj"
+          "password": "sha256$e6718d0cefe71dfa13dec1882782b832ed4842ac4bec8c03cfbd334dda2af7e1",
+          "passwordHash": "sha256$e6718d0cefe71dfa13dec1882782b832ed4842ac4bec8c03cfbd334dda2af7e1"
         }
       ],
       "title": "纖維不夠，腸道細菌可能開始吃你的腸黏膜",
@@ -205,7 +214,8 @@
           "email": "s25101106@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "jY6kF9tK"
+          "password": "sha256$e2de627329787a73fb468b2cbe826955843ca313af2a8e7a53037bd9a6045e62",
+          "passwordHash": "sha256$e2de627329787a73fb468b2cbe826955843ca313af2a8e7a53037bd9a6045e62"
         }
       ],
       "title": "跨越死亡之路：地下通道減少80%路殺",
@@ -230,7 +240,8 @@
           "email": "s25101109@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "xQLr3hPs"
+          "password": "sha256$0af8a6ebb6fd44573dcec44ca0d365c9bcec9e90cc968dfa3d272fe043bab607",
+          "passwordHash": "sha256$0af8a6ebb6fd44573dcec44ca0d365c9bcec9e90cc968dfa3d272fe043bab607"
         },
         {
           "id": "25101105",
@@ -238,7 +249,8 @@
           "email": "s25101105@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "mpabWXa9"
+          "password": "sha256$fd61c13ac6a80155f39ee3e0a5ea144b9a72b9164ed996b0851b7d8fff8ea777",
+          "passwordHash": "sha256$fd61c13ac6a80155f39ee3e0a5ea144b9a72b9164ed996b0851b7d8fff8ea777"
         }
       ],
       "title": "出門上班一整天，該為家中貓咪開冷氣嗎？",
@@ -263,7 +275,8 @@
           "email": "s25101117@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "sMgJ9QKm"
+          "password": "sha256$cdc98fece0344cb428741cc8b9d8f4704e4b4ee77055406c7134576c8ea4ab04",
+          "passwordHash": "sha256$cdc98fece0344cb428741cc8b9d8f4704e4b4ee77055406c7134576c8ea4ab04"
         },
         {
           "id": "25101120",
@@ -271,7 +284,8 @@
           "email": "s25101120@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "6i3cgSEj"
+          "password": "sha256$7226e9398798d0b4f01a67def1a0a26c4c197003c9cbba62dde7060c718de618",
+          "passwordHash": "sha256$7226e9398798d0b4f01a67def1a0a26c4c197003c9cbba62dde7060c718de618"
         }
       ],
       "title": "臺灣海上犯罪網絡特徵與行為模式",
@@ -296,7 +310,8 @@
           "email": "s25101126@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "2rvMqEzF"
+          "password": "sha256$90e5b99c7c472c103f96fbdf3cdaea3944207cb874ab7af8aff609d38fbb5769",
+          "passwordHash": "sha256$90e5b99c7c472c103f96fbdf3cdaea3944207cb874ab7af8aff609d38fbb5769"
         },
         {
           "id": "25101127",
@@ -304,7 +319,8 @@
           "email": "s25101127@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "hhzfyQWX"
+          "password": "sha256$2e5c37fca6e815f91ce5f34bb265cd6b969d33010abd141325429857be7c155a",
+          "passwordHash": "sha256$2e5c37fca6e815f91ce5f34bb265cd6b969d33010abd141325429857be7c155a"
         }
       ],
       "title": "霸王龍體溫之謎簡報",
@@ -329,7 +345,8 @@
           "email": "s25101118@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "PggL7GJv"
+          "password": "sha256$1327592a19869c1511aa91084de8afc78acefba54e415b6679e4efbe8a60ec8c",
+          "passwordHash": "sha256$1327592a19869c1511aa91084de8afc78acefba54e415b6679e4efbe8a60ec8c"
         },
         {
           "id": "25101119",
@@ -337,7 +354,8 @@
           "email": "s25101119@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "vtbrkQPK"
+          "password": "sha256$e46c0249bd604fcc0157c1343f68bf28c638cdcc6c2f1cb384b99f83c8c6790b",
+          "passwordHash": "sha256$e46c0249bd604fcc0157c1343f68bf28c638cdcc6c2f1cb384b99f83c8c6790b"
         }
       ],
       "title": "早餐太晚吃會影響壽命？",
@@ -362,7 +380,8 @@
           "email": "s25101122@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "33egMVE3"
+          "password": "sha256$e58a618e5c7d23b134d6d208ee5d0b2ef63643f44b9f894c843317af6c871bca",
+          "passwordHash": "sha256$e58a618e5c7d23b134d6d208ee5d0b2ef63643f44b9f894c843317af6c871bca"
         },
         {
           "id": "25101123",
@@ -370,7 +389,8 @@
           "email": "s25101123@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "jc6JQNnC"
+          "password": "sha256$e5c13806edd74a2d69aa3945312db1e22347baae39ac7d4e44525a4f04cfe05f",
+          "passwordHash": "sha256$e5c13806edd74a2d69aa3945312db1e22347baae39ac7d4e44525a4f04cfe05f"
         }
       ],
       "title": "沒抽菸也會中招！這種罕見基因讓肺癌風險狂飆60倍",
@@ -395,7 +415,8 @@
           "email": "s25101125@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "8YQ8JdP4"
+          "password": "sha256$0f43491bb63f0245c465b8e17b24e095a21db0420e3c15f0a1adacf3033d5724",
+          "passwordHash": "sha256$0f43491bb63f0245c465b8e17b24e095a21db0420e3c15f0a1adacf3033d5724"
         },
         {
           "id": "25101124",
@@ -403,7 +424,8 @@
           "email": "s25101124@stu.edu.tw",
           "active": true,
           "role": "student",
-          "password": "Gzig5AiQ"
+          "password": "sha256$80629dd2b9caa0c61892add60a2c61dd39fb72c67afcb1c44ae3110332bce697",
+          "passwordHash": "sha256$80629dd2b9caa0c61892add60a2c61dd39fb72c67afcb1c44ae3110332bce697"
         }
       ],
       "title": "野外實驗發現：鯊魚聽力遠超預期（霸王龍體溫與內溫性研究）",
@@ -433,10 +455,11 @@
       "id": "teacher",
       "name": "授課老師",
       "email": "teacher@stu.edu.tw",
-      "password": "TeAcHeR8",
+      "password": "sha256$384ac62f0cf183536d8647778d91788406df02d6a4547409aff55f3a63021914",
       "groupOrder": null,
       "role": "admin",
-      "active": true
+      "active": true,
+      "passwordHash": "sha256$384ac62f0cf183536d8647778d91788406df02d6a4547409aff55f3a63021914"
     },
     {
       "id": "25101129",
@@ -445,7 +468,8 @@
       "groupOrder": null,
       "active": true,
       "role": "student",
-      "password": "bDFaAs5j"
+      "password": "sha256$e1feb87fc38346697b5d0d7a3951d41894b0d74d6746d4ec65483e084feac34e",
+      "passwordHash": "sha256$e1feb87fc38346697b5d0d7a3951d41894b0d74d6746d4ec65483e084feac34e"
     },
     {
       "id": "25101121",
@@ -454,7 +478,8 @@
       "groupOrder": null,
       "active": true,
       "role": "student",
-      "password": "zK8xY84b"
+      "password": "sha256$5e8b44a3993be8da1eb2e6f022de55a52afaa861b93739df094a78f93bf8e600",
+      "passwordHash": "sha256$5e8b44a3993be8da1eb2e6f022de55a52afaa861b93739df094a78f93bf8e600"
     }
   ],
   "ratings": [

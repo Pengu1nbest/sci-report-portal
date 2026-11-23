@@ -397,9 +397,9 @@
               </div>
 
               <div class="form-group">
-                <label for="admin-acc-password">登入密碼 (Password — 留空將自動隨機產生 8 碼)</label>
+                <label for="admin-acc-password">登入密碼 (輸入明文後自動以 SHA-256 Hash 存入 JSON；編輯時留空則不變更)</label>
                 <div class="input-with-btn">
-                  <input type="text" id="admin-acc-password" placeholder="例如：AtZXcAzc" />
+                  <input type="text" id="admin-acc-password" placeholder="留空自動隨機生成 8 碼並以 SHA-256 Hash 存入 JSON" />
                   <button type="button" class="btn btn-outline btn-sm" id="btn-gen-random-pwd">隨機產生</button>
                 </div>
               </div>
@@ -464,8 +464,8 @@
           <div class="surface-card">
             <div class="card-header-bar">
               <div>
-                <h2 class="section-title">全班帳號密碼清單與權限管理</h2>
-                <p class="section-desc">目前主管理員學號：<code>25101114</code>（張亦傑）。可檢視或重設每位學生的隨機密碼、切換管理員權限或調整分組。</p>
+                <h2 class="section-title">全班帳號密碼雜湊清單與權限管理</h2>
+                <p class="section-desc">目前預設管理員：老師專用帳號 <code>teacher</code> 與學生管理員 <code>25101114</code>（張亦傑）。所有密碼皆以 <strong>SHA-256 Hash</strong> 儲存於 JSON 中，可點擊「編輯 / 重設密碼」輸入新密碼重設雜湊值。</p>
               </div>
               <div class="search-box">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -483,7 +483,7 @@
                     <th>組別</th>
                     <th>姓名</th>
                     <th>登入帳號 (學號)</th>
-                    <th>登入密碼 (隨機生成)</th>
+                    <th>密碼雜湊 (SHA-256 Hash)</th>
                     <th>學校信箱</th>
                     <th>角色權限</th>
                     <th>狀態</th>

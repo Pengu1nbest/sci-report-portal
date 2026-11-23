@@ -35,6 +35,8 @@ const GROUP_CLOUD_MAP = {
   12: { formId: '1yETAYtxGfCxRat3H59Pa070Ap5aGL2pQ9iuHb-xAjro', sheetId: '1701gKKXLTG_BEc0Vq4R-7B0Y1AN7Ukn4nPELWQuDBW4', qrDriveId: '18dSDKOP6JR3og6Mzyvuo0sCoEe-p43AB' }
 };
 
+const PASSWORD_SALT = 'sci_report_portal_v1';
+
 function generateRandomPasswordClient(len = 8) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   let out = '';
@@ -42,6 +44,29 @@ function generateRandomPasswordClient(len = 8) {
     out += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return out;
+}
+
+async function hashPasswordClient(pwd) {
+  if (!pwd) return '';
+  const s = String(pwd).trim();
+  if (s.startsWith('sha256$')) return s;
+  const enc = new TextEncoder().encode(`${PASSWORD_SALT}:${s}`);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  const hex = Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  return `sha256$${hex}`;
+}
+
+async function verifyPasswordClient(inputPlain, storedValue) {
+  if (!inputPlain || !storedValue) return false;
+  const plain = String(inputPlain).trim();
+  const stored = String(storedValue).trim();
+  const hashedInput = await hashPasswordClient(plain);
+  if (stored.startsWith('sha256$')) {
+    return hashedInput === stored;
+  }
+  return plain === stored || hashedInput === stored;
 }
 
 // Initialize app on DOMContentLoaded
@@ -56,14 +81,16 @@ function buildAccountsFromDb(db) {
   const adminSet = new Set((db.admins || ['teacher@stu.edu.tw', 's25101114@stu.edu.tw']).map(e => e.toLowerCase()));
   const accounts = [];
 
-  // Ensure teacher account is always present
+  // Ensure teacher account is always present (with SHA-256 hash of TeAcHeR8)
   db.extraStudents = db.extraStudents || [];
   if (!db.extraStudents.some(ex => ex.id === 'teacher' || ex.email.toLowerCase() === 'teacher@stu.edu.tw')) {
+    const teacherHash = 'sha256$384ac62f0cf183536d8647778d91788406df02d6a4547409aff55f3a63021914';
     db.extraStudents.unshift({
       id: 'teacher',
       name: '授課老師',
       email: 'teacher@stu.edu.tw',
-      password: 'TeAcHeR8',
+      password: teacherHash,
+      passwordHash: teacherHash,
       groupOrder: null,
       role: 'admin',
       active: true
@@ -73,12 +100,14 @@ function buildAccountsFromDb(db) {
   for (const g of db.groups || []) {
     for (const m of g.members || []) {
       const isAdmin = adminSet.has(m.email.toLowerCase()) || m.role === 'admin' || m.id === '25101114';
+      const pwdHash = m.passwordHash || m.password || '';
       accounts.push({
         id: m.id,
         name: m.name,
         email: m.email,
         altEmail: m.altEmail || '',
-        password: m.password || '',
+        password: pwdHash,
+        passwordHash: pwdHash,
         groupOrder: g.order,
         groupName: g.name,
         role: isAdmin ? 'admin' : 'student',
@@ -89,12 +118,14 @@ function buildAccountsFromDb(db) {
   }
   for (const ex of db.extraStudents || []) {
     const isAdmin = adminSet.has(ex.email.toLowerCase()) || ex.role === 'admin' || ex.id === 'teacher';
+    const pwdHash = ex.passwordHash || ex.password || '';
     accounts.push({
       id: ex.id,
       name: ex.name,
       email: ex.email,
       altEmail: ex.altEmail || '',
-      password: ex.password || '',
+      password: pwdHash,
+      passwordHash: pwdHash,
       groupOrder: ex.groupOrder || null,
       groupName: ex.id === 'teacher' ? '授課教師 / 管理員' : ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
       role: isAdmin ? 'admin' : 'student',
@@ -432,13 +463,13 @@ window.exportAllScoresExcel = async function () {
       const ws2 = window.XLSX.utils.aoa_to_sheet(ratingRows);
       window.XLSX.utils.book_append_sheet(wb, ws2, '各組評分明細紀錄');
 
-      // Sheet 3: 學生與管理員帳號密碼名單
-      const accRows = [['所屬組別', '登入帳號 (學號)', '登入密碼 (隨機生成)', '姓名', '學校 Google 信箱', '角色權限', '狀態']];
+      // Sheet 3: 學生與管理員帳號密碼雜湊名單
+      const accRows = [['所屬組別', '登入帳號 (學號)', '密碼 SHA-256 雜湊值 (Password Hash)', '姓名', '學校 Google 信箱', '角色權限', '狀態']];
       state.accounts.forEach(a => {
         accRows.push([
           a.groupOrder ? `第 ${a.groupOrder} 組` : '未分組',
           a.id,
-          a.password || '',
+          a.passwordHash || a.password || '',
           a.name,
           a.email,
           a.isAdmin ? '系統管理員 (Admin)' : '一般學生 (Student)',
@@ -481,18 +512,25 @@ async function fetchPortalData() {
 
     if (savedStatic) {
       const parsed = JSON.parse(savedStatic);
-      // Ensure passwords exist if migrating from older localStorage
+      // Ensure SHA-256 password hashes exist if migrating from older localStorage
       const pwdMap = {};
-      (initDb.groups || []).forEach(g => (g.members || []).forEach(m => (pwdMap[m.id] = m.password)));
-      (initDb.extraStudents || []).forEach(ex => (pwdMap[ex.id] = ex.password));
-      (parsed.groups || []).forEach(g =>
-        (g.members || []).forEach(m => {
-          if (!m.password) m.password = pwdMap[m.id] || generateRandomPasswordClient(8);
-        })
-      );
-      (parsed.extraStudents || []).forEach(ex => {
-        if (!ex.password) ex.password = pwdMap[ex.id] || generateRandomPasswordClient(8);
-      });
+      (initDb.groups || []).forEach(g => (g.members || []).forEach(m => (pwdMap[m.id] = m.passwordHash || m.password)));
+      (initDb.extraStudents || []).forEach(ex => (pwdMap[ex.id] = ex.passwordHash || ex.password));
+      for (const g of parsed.groups || []) {
+        for (const m of g.members || []) {
+          if (!m.password || !String(m.password).startsWith('sha256$')) {
+            m.password = pwdMap[m.id] || (await hashPasswordClient(m.password || generateRandomPasswordClient(8)));
+          }
+          m.passwordHash = m.password;
+        }
+      }
+      for (const ex of parsed.extraStudents || []) {
+        if (!ex.password || !String(ex.password).startsWith('sha256$')) {
+          ex.password = pwdMap[ex.id] || (await hashPasswordClient(ex.password || generateRandomPasswordClient(8)));
+        }
+        ex.passwordHash = ex.password;
+      }
+      localStorage.setItem('sci_portal_static_db', JSON.stringify(parsed));
       hydrateStaticState(parsed);
     } else {
       hydrateStaticState(initDb);
@@ -893,6 +931,10 @@ function renderAdminBackend() {
         acc.id === '25101114' ||
         acc.id === 'teacher' ||
         acc.email.toLowerCase() === 'teacher@stu.edu.tw';
+      const fullHash = acc.passwordHash || acc.password || '';
+      const shortHashDisplay = fullHash.startsWith('sha256$')
+        ? `sha256$${fullHash.slice(7, 19)}…${fullHash.slice(-6)}`
+        : fullHash;
       return `
         <tr>
           <td>
@@ -905,7 +947,7 @@ function renderAdminBackend() {
             ${escapeHtml(acc.id)}
           </td>
           <td>
-            <span class="pwd-code-badge">${escapeHtml(acc.password || '')}</span>
+            <span class="pwd-code-badge" title="完整 SHA-256 雜湊值：${escapeAttr(fullHash)}">${escapeHtml(shortHashDisplay)}</span>
           </td>
           <td style="font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);">
             ${escapeHtml(acc.email)}
@@ -1047,14 +1089,16 @@ window.populateAdminEditAccount = function (email) {
   document.getElementById('admin-account-form-title').textContent = `編輯帳號：${acc.name} (${acc.id})`;
   document.getElementById('admin-acc-original-email').value = acc.email;
   document.getElementById('admin-acc-id').value = acc.id;
-  document.getElementById('admin-acc-password').value = acc.password || '';
+  const pwdInput = document.getElementById('admin-acc-password');
+  pwdInput.value = '';
+  pwdInput.placeholder = '留空代表保持原雜湊密碼不變，或輸入新明文密碼以重設';
   document.getElementById('admin-acc-name').value = acc.name;
   document.getElementById('admin-acc-email').value = acc.email;
   document.getElementById('admin-acc-group').value = acc.groupOrder ? String(acc.groupOrder) : '';
   document.getElementById('admin-acc-role').value = acc.isAdmin ? 'admin' : 'student';
   document.getElementById('admin-acc-active').value = acc.active !== false ? 'true' : 'false';
 
-  document.getElementById('btn-admin-save-acc').textContent = '更新帳號與密碼設定';
+  document.getElementById('btn-admin-save-acc').textContent = '更新帳號與密碼雜湊設定';
   document.getElementById('btn-admin-cancel-edit').classList.remove('hidden');
 };
 
@@ -1062,7 +1106,9 @@ function resetAdminAccountForm() {
   document.getElementById('admin-account-form-title').textContent = '新增學生 / 管理員帳號';
   document.getElementById('admin-acc-original-email').value = '';
   document.getElementById('admin-acc-id').value = '';
-  document.getElementById('admin-acc-password').value = '';
+  const pwdInput = document.getElementById('admin-acc-password');
+  pwdInput.value = '';
+  pwdInput.placeholder = '留空自動隨機生成 8 碼並以 SHA-256 Hash 存入 JSON';
   document.getElementById('admin-acc-name').value = '';
   document.getElementById('admin-acc-email').value = '';
   document.getElementById('admin-acc-group').value = '';
@@ -1072,23 +1118,33 @@ function resetAdminAccountForm() {
   document.getElementById('btn-admin-cancel-edit').classList.add('hidden');
 }
 
-function upsertStaticAccount(originalEmail, payload) {
+async function upsertStaticAccount(originalEmail, payload) {
   const cleanId = String(payload.id).trim();
   const cleanName = String(payload.name).trim();
   const cleanEmail = String(payload.email || `s${cleanId}@stu.edu.tw`).trim().toLowerCase();
-  const cleanPassword = payload.password && String(payload.password).trim() ? String(payload.password).trim() : generateRandomPasswordClient(8);
   const targetRole = payload.role === 'admin' ? 'admin' : 'student';
   const targetGroupOrder = payload.groupOrder ? Number(payload.groupOrder) : null;
   const targetActive = payload.active !== false;
 
+  let existingHash = '';
   if (originalEmail) {
     const orig = originalEmail.toLowerCase();
+    const existingAcc = state.accounts.find(a => a.email.toLowerCase() === orig);
+    if (existingAcc) {
+      existingHash = existingAcc.passwordHash || existingAcc.password || '';
+    }
     state.groups.forEach(g => {
       g.members = g.members.filter(m => m.email.toLowerCase() !== orig);
     });
     state.extraStudents = (state.extraStudents || []).filter(m => m.email.toLowerCase() !== orig);
     state.admins = (state.admins || []).filter(a => a.toLowerCase() !== orig && a.toLowerCase() !== cleanEmail);
   }
+
+  let plainOrHash = payload.password && String(payload.password).trim() ? String(payload.password).trim() : '';
+  if (!plainOrHash) {
+    plainOrHash = existingHash || generateRandomPasswordClient(8);
+  }
+  const hashedPassword = await hashPasswordClient(plainOrHash);
 
   if (targetRole === 'admin' && !state.admins.some(a => a.toLowerCase() === cleanEmail)) {
     state.admins.push(cleanEmail);
@@ -1098,7 +1154,8 @@ function upsertStaticAccount(originalEmail, payload) {
     id: cleanId,
     name: cleanName,
     email: cleanEmail,
-    password: cleanPassword,
+    password: hashedPassword,
+    passwordHash: hashedPassword,
     role: targetRole,
     active: targetActive
   };
@@ -1112,6 +1169,7 @@ function upsertStaticAccount(originalEmail, payload) {
   }
 
   saveStaticDb();
+  return { memberObj, plainGenerated: !plainOrHash.startsWith('sha256$') ? plainOrHash : '' };
 }
 
 window.toggleAccountAdminRole = async function (email) {
@@ -1122,11 +1180,11 @@ window.toggleAccountAdminRole = async function (email) {
   const newRole = acc.isAdmin ? 'student' : 'admin';
 
   if (state.isStaticMode) {
-    upsertStaticAccount(acc.email, {
+    await upsertStaticAccount(acc.email, {
       id: acc.id,
       name: acc.name,
       email: acc.email,
-      password: acc.password,
+      password: acc.passwordHash || acc.password,
       groupOrder: acc.groupOrder,
       role: newRole,
       active: acc.active
@@ -1147,7 +1205,7 @@ window.toggleAccountAdminRole = async function (email) {
         id: acc.id,
         name: acc.name,
         email: acc.email,
-        password: acc.password,
+        password: acc.passwordHash || acc.password,
         groupOrder: acc.groupOrder,
         role: newRole,
         active: acc.active
@@ -1389,7 +1447,7 @@ function renderCloudResources() {
   container.innerHTML = masterHtml + groupCardsHtml;
 }
 
-// 8. Authenticate with Student ID + Password
+// 8. Authenticate with Student ID + Password (verifies SHA-256 password hash)
 async function performLogin(studentId, password) {
   const errEl = document.getElementById('gate-login-error');
   if (errEl) errEl.classList.add('hidden');
@@ -1412,7 +1470,8 @@ async function performLogin(studentId, password) {
       return;
     }
 
-    if (!pwd || pwd !== String(matched.password)) {
+    const isValid = await verifyPasswordClient(pwd, matched.passwordHash || matched.password);
+    if (!isValid) {
       if (errEl) {
         errEl.textContent = '密碼錯誤，請確認您的 8 碼隨機密碼是否輸入正確（注意大小寫）。';
         errEl.classList.remove('hidden');
@@ -1787,10 +1846,15 @@ function bindEvents() {
     const isEdit = Boolean(originalEmail);
 
     if (state.isStaticMode) {
-      upsertStaticAccount(originalEmail, payload);
+      const { plainGenerated } = await upsertStaticAccount(originalEmail, payload);
       resetAdminAccountForm();
       renderAll();
-      showToast(isEdit ? '已更新帳號與密碼設定！' : '已成功新增帳號與隨機密碼！', 'success');
+      showToast(
+        isEdit
+          ? `已更新帳號與密碼 SHA-256 雜湊設定${plainGenerated ? `（新密碼：${plainGenerated}）` : ''}！`
+          : `已成功新增帳號並儲存 SHA-256 雜湊（明文密碼：${plainGenerated}）！`,
+        'success'
+      );
       return;
     }
 
@@ -1816,7 +1880,12 @@ function bindEvents() {
 
       resetAdminAccountForm();
       await fetchPortalData();
-      showToast(isEdit ? '已更新帳號與密碼設定！' : `已成功新增帳號（密碼：${data.account.password}）！`, 'success');
+      showToast(
+        isEdit
+          ? '已更新帳號與密碼 SHA-256 雜湊設定！'
+          : `已成功新增帳號並儲存 SHA-256 雜湊（明文密碼：${data.plainPassword || payload.password}）！`,
+        'success'
+      );
     } catch (err) {
       showToast('儲存帳號發生錯誤：' + err.message, 'error');
     }

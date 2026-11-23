@@ -3,11 +3,32 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
 const util = require('util');
 const ExcelJS = require('exceljs');
 
 const execFileAsync = util.promisify(execFile);
+
+const PASSWORD_SALT = 'sci_report_portal_v1';
+
+function hashPassword(pwd) {
+  if (!pwd) return '';
+  const s = String(pwd).trim();
+  if (s.startsWith('sha256$')) return s;
+  const digest = crypto.createHash('sha256').update(`${PASSWORD_SALT}:${s}`).digest('hex');
+  return `sha256$${digest}`;
+}
+
+function verifyPassword(inputPlain, storedValue) {
+  if (!inputPlain || !storedValue) return false;
+  const plain = String(inputPlain).trim();
+  const stored = String(storedValue).trim();
+  if (stored.startsWith('sha256$')) {
+    return hashPassword(plain) === stored;
+  }
+  return plain === stored || hashPassword(plain) === stored;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -272,7 +293,16 @@ const INITIAL_DB = {
     }
   ],
   extraStudents: [
-    { id: 'teacher', name: '授課老師', email: 'teacher@stu.edu.tw', password: 'TeAcHeR8', groupOrder: null, role: 'admin', active: true },
+    {
+      id: 'teacher',
+      name: '授課老師',
+      email: 'teacher@stu.edu.tw',
+      password: hashPassword('TeAcHeR8'),
+      passwordHash: hashPassword('TeAcHeR8'),
+      groupOrder: null,
+      role: 'admin',
+      active: true
+    },
     { id: '25101129', name: '江浩暘', email: 's25101129@stu.edu.tw', groupOrder: null, role: 'student', active: true },
     { id: '25101121', name: '同學 25101121', email: 's25101121@stu.edu.tw', groupOrder: null, role: 'student', active: true }
   ],
@@ -371,7 +401,14 @@ function generateRandomPassword(len = 8) {
         changed = true;
       }
       if (!m.password) {
-        m.password = generateRandomPassword(8);
+        m.password = hashPassword(generateRandomPassword(8));
+        changed = true;
+      } else if (!String(m.password).startsWith('sha256$')) {
+        m.password = hashPassword(m.password);
+        changed = true;
+      }
+      if (m.passwordHash !== m.password) {
+        m.passwordHash = m.password;
         changed = true;
       }
       const shouldBeAdmin = adminSet.has(m.email.toLowerCase()) || m.role === 'admin';
@@ -390,11 +427,13 @@ function generateRandomPassword(len = 8) {
 
   db.extraStudents = db.extraStudents || [];
   if (!db.extraStudents.some(ex => ex.id === 'teacher' || ex.email.toLowerCase() === 'teacher@stu.edu.tw')) {
+    const teacherHash = hashPassword('TeAcHeR8');
     db.extraStudents.unshift({
       id: 'teacher',
       name: '授課老師',
       email: 'teacher@stu.edu.tw',
-      password: 'TeAcHeR8',
+      password: teacherHash,
+      passwordHash: teacherHash,
       groupOrder: null,
       role: 'admin',
       active: true
@@ -408,7 +447,14 @@ function generateRandomPassword(len = 8) {
       changed = true;
     }
     if (!ex.password) {
-      ex.password = generateRandomPassword(8);
+      ex.password = hashPassword(generateRandomPassword(8));
+      changed = true;
+    } else if (!String(ex.password).startsWith('sha256$')) {
+      ex.password = hashPassword(ex.password);
+      changed = true;
+    }
+    if (ex.passwordHash !== ex.password) {
+      ex.passwordHash = ex.password;
       changed = true;
     }
     const shouldBeAdmin = adminSet.has(ex.email.toLowerCase()) || ex.role === 'admin' || ex.id === 'teacher';
@@ -466,12 +512,14 @@ function getAllAccounts(db) {
   for (const g of db.groups) {
     for (const m of g.members) {
       const isAdmin = isAdminEmail(db, m.email) || m.role === 'admin';
+      const pwdHash = hashPassword(m.passwordHash || m.password || '');
       accounts.push({
         id: m.id,
         name: m.name,
         email: m.email,
         altEmail: m.altEmail || '',
-        password: m.password || '',
+        password: pwdHash,
+        passwordHash: pwdHash,
         groupOrder: g.order,
         groupName: g.name,
         role: isAdmin ? 'admin' : 'student',
@@ -482,12 +530,14 @@ function getAllAccounts(db) {
   }
   for (const ex of (db.extraStudents || [])) {
     const isAdmin = isAdminEmail(db, ex.email) || ex.role === 'admin';
+    const pwdHash = hashPassword(ex.passwordHash || ex.password || '');
     accounts.push({
       id: ex.id,
       name: ex.name,
       email: ex.email,
       altEmail: ex.altEmail || '',
-      password: ex.password || '',
+      password: pwdHash,
+      passwordHash: pwdHash,
       groupOrder: ex.groupOrder || null,
       groupName: ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
       role: isAdmin ? 'admin' : 'student',
@@ -802,7 +852,7 @@ app.get('/api/portal-data', (req, res) => {
   });
 });
 
-// 2. Authenticate student/admin via Student ID + Password
+// 2. Authenticate student/admin via Student ID + Password (verifies SHA-256 password hash)
 app.post('/api/auth/login', (req, res) => {
   const { studentId, emailOrId, password } = req.body;
   const query = studentId || emailOrId;
@@ -815,7 +865,7 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
 
-  if (!password || String(password).trim() !== String(student.password)) {
+  if (!verifyPassword(password, student.passwordHash || student.password)) {
     return res.status(401).json({
       error: '密碼錯誤，請確認您的隨機登入密碼是否輸入正確（注意大小寫）。'
     });
@@ -1041,7 +1091,8 @@ app.post('/api/admin/accounts', verifyAdminMiddleware, async (req, res) => {
   const cleanId = String(id).trim();
   const cleanName = String(name).trim();
   const cleanEmail = String(email || `s${cleanId}@stu.edu.tw`).trim().toLowerCase();
-  const cleanPassword = password && String(password).trim() ? String(password).trim() : generateRandomPassword(8);
+  const plainPwd = password && String(password).trim() ? String(password).trim() : generateRandomPassword(8);
+  const hashedPassword = hashPassword(plainPwd);
   const targetRole = role === 'admin' ? 'admin' : 'student';
   const targetGroupOrder = groupOrder ? Number(groupOrder) : null;
 
@@ -1061,7 +1112,8 @@ app.post('/api/admin/accounts', verifyAdminMiddleware, async (req, res) => {
     id: cleanId,
     name: cleanName,
     email: cleanEmail,
-    password: cleanPassword,
+    password: hashedPassword,
+    passwordHash: hashedPassword,
     role: targetRole,
     active: true
   };
@@ -1082,7 +1134,7 @@ app.post('/api/admin/accounts', verifyAdminMiddleware, async (req, res) => {
     console.error('Admin account create sync warning:', e.message);
   }
 
-  res.json({ success: true, account: newMember });
+  res.json({ success: true, account: newMember, plainPassword: plainPwd.startsWith('sha256$') ? '' : plainPwd });
 });
 
 // 7. Admin: Update an existing account (change name, ID, email, password, groupOrder, role, active status)
@@ -1129,12 +1181,18 @@ app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req,
     db.admins.push(cleanEmail);
   }
 
+  const nextPasswordHash =
+    password && String(password).trim()
+      ? hashPassword(String(password).trim())
+      : hashPassword(foundMember.passwordHash || foundMember.password || generateRandomPassword(8));
+
   const updatedMember = {
     ...foundMember,
     id: cleanId || foundMember.id,
     name: cleanName || foundMember.name,
     email: cleanEmail,
-    password: password && String(password).trim() ? String(password).trim() : (foundMember.password || generateRandomPassword(8)),
+    password: nextPasswordHash,
+    passwordHash: nextPasswordHash,
     role: targetRole,
     active: targetActive
   };
@@ -1463,10 +1521,10 @@ app.get('/api/admin/export-excel', verifyAdminMiddleware, async (req, res) => {
       { width: 32 }
     ];
 
-    // ==================== SHEET 3: 學生與管理員帳號密碼名單 ====================
+    // ==================== SHEET 3: 學生與管理員帳號密碼雜湊名單 ====================
     const wsAccounts = workbook.addWorksheet('學生與管理員帳號名單');
     const accHeaderRow = wsAccounts.getRow(1);
-    accHeaderRow.values = ['所屬組別', '登入帳號 (學號)', '登入密碼 (隨機生成)', '姓名', '學校 Google 信箱', '系統角色權限', '帳號狀態'];
+    accHeaderRow.values = ['所屬組別', '登入帳號 (學號)', '密碼 SHA-256 雜湊值 (Password Hash)', '姓名', '學校 Google 信箱', '系統角色權限', '帳號狀態'];
     accHeaderRow.height = 24;
     accHeaderRow.eachCell(cell => {
       cell.font = { name: 'Microsoft JhengHei', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -1479,7 +1537,7 @@ app.get('/api/admin/export-excel', verifyAdminMiddleware, async (req, res) => {
       row.values = [
         a.groupOrder ? `第 ${a.groupOrder} 組` : '未分組',
         a.id,
-        a.password || '',
+        a.passwordHash || a.password || '',
         a.name,
         a.email,
         a.isAdmin ? '系統管理員 (Admin)' : '一般學生 (Student)',
