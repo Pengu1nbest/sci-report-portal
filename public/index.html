@@ -48,22 +48,63 @@
             <span class="user-group-tag" id="user-display-group">請先登入</span>
             <span class="user-admin-tag hidden" id="user-display-admin">系統管理員</span>
           </div>
-          <button id="btn-switch-user" class="btn-link" title="切換或登出帳號">切換帳號</button>
+          <button id="btn-logout-user" class="btn-link" title="登出系統">登出</button>
         </div>
-
-        <button id="btn-open-login" class="btn btn-primary btn-sm">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-            <polyline points="10 17 15 12 10 7"></polyline>
-            <line x1="15" y1="12" x2="3" y2="12"></line>
-          </svg>
-          <span>學生 / 管理員登入</span>
-        </button>
       </div>
     </div>
   </header>
 
-  <main class="container">
+  <!-- FULL-SCREEN LOGIN GATE (Mandatory Authentication Before Viewing Portal) -->
+  <section id="login-gate-screen" class="login-gate-wrapper">
+    <div class="login-gate-card surface-card">
+      <div class="login-gate-header">
+        <div class="brand-mark" style="width:48px; height:48px; margin:0 auto 12px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h2>科技文選 — 分組報告與評分入口網站</h2>
+        <p>請輸入您的<strong>學號</strong>與<strong>登入密碼</strong>進行身分驗證，登入後即可查看所有組別評分表並上傳本組報告</p>
+      </div>
+
+      <form id="form-gate-login" class="form-stack">
+        <div class="form-group">
+          <label for="gate-input-student-id">登入帳號（學號 Student ID） <span class="req">*</span></label>
+          <input
+            type="text"
+            id="gate-input-student-id"
+            placeholder="請輸入學號，例如：25101114"
+            required
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="gate-input-password">登入密碼（Password） <span class="req">*</span></label>
+          <input
+            type="password"
+            id="gate-input-password"
+            placeholder="請輸入 8 碼隨機密碼"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+
+        <p id="gate-login-error" class="form-error hidden"></p>
+
+        <button type="submit" class="btn btn-primary btn-block" style="padding:11px 16px; font-size:14.5px;">
+          登入進入系統
+        </button>
+      </form>
+
+      <div class="login-gate-footer">
+        <span>系統管理員帳號：學號 <code>25101114</code>（張亦傑）｜ 若忘記密碼請洽詢課程管理員</span>
+      </div>
+    </div>
+  </section>
+
+  <main id="portal-main" class="container hidden">
     <!-- Hero / Quick Status Strip -->
     <section class="status-banner" aria-label="課程評分規則與全班統計">
       <div class="status-banner-left">
@@ -351,8 +392,16 @@
               <input type="hidden" id="admin-acc-original-email" value="" />
 
               <div class="form-group">
-                <label for="admin-acc-id">學號 (Student ID) <span class="req">*</span></label>
+                <label for="admin-acc-id">登入帳號 — 學號 (Student ID) <span class="req">*</span></label>
                 <input type="text" id="admin-acc-id" required placeholder="例如：25101114" />
+              </div>
+
+              <div class="form-group">
+                <label for="admin-acc-password">登入密碼 (Password — 留空將自動隨機產生 8 碼)</label>
+                <div class="input-with-btn">
+                  <input type="text" id="admin-acc-password" placeholder="例如：AtZXcAzc" />
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-gen-random-pwd">隨機產生</button>
+                </div>
               </div>
 
               <div class="form-group">
@@ -361,8 +410,8 @@
               </div>
 
               <div class="form-group">
-                <label for="admin-acc-email">學校 Google 信箱 (Email) <span class="req">*</span></label>
-                <input type="email" id="admin-acc-email" required placeholder="例如：s25101114@stu.edu.tw" />
+                <label for="admin-acc-email">學校 Google 信箱 (Email)</label>
+                <input type="email" id="admin-acc-email" placeholder="例如：s25101114@stu.edu.tw" />
               </div>
 
               <div class="form-group">
@@ -402,7 +451,7 @@
 
               <div class="form-actions" style="display:flex; gap:8px;">
                 <button type="submit" class="btn btn-primary" id="btn-admin-save-acc" style="flex:1;">
-                  儲存帳號設定
+                  儲存帳號與密碼設定
                 </button>
                 <button type="button" class="btn btn-outline hidden" id="btn-admin-cancel-edit">
                   取消編輯
@@ -415,8 +464,8 @@
           <div class="surface-card">
             <div class="card-header-bar">
               <div>
-                <h2 class="section-title">全班帳號清單與權限管理</h2>
-                <p class="section-desc">目前主管理員：<code>s25101114@stu.edu.tw</code>（張亦傑）。可直接切換管理員權限、調整分組或停用帳號。</p>
+                <h2 class="section-title">全班帳號密碼清單與權限管理</h2>
+                <p class="section-desc">目前主管理員學號：<code>25101114</code>（張亦傑）。可檢視或重設每位學生的隨機密碼、切換管理員權限或調整分組。</p>
               </div>
               <div class="search-box">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -432,8 +481,10 @@
                 <thead>
                   <tr>
                     <th>組別</th>
-                    <th>姓名 / 學號</th>
-                    <th>學校 Google 信箱</th>
+                    <th>姓名</th>
+                    <th>登入帳號 (學號)</th>
+                    <th>登入密碼 (隨機生成)</th>
+                    <th>學校信箱</th>
                     <th>角色權限</th>
                     <th>狀態</th>
                     <th>管理操作</th>

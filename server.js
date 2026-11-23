@@ -355,9 +355,22 @@ function ensureDbSchema(db) {
       }
     }
 
+function generateRandomPassword(len = 8) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < len; i++) {
+    out += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return out;
+}
+
     for (const m of g.members) {
       if (m.active === undefined) {
         m.active = true;
+        changed = true;
+      }
+      if (!m.password) {
+        m.password = generateRandomPassword(8);
         changed = true;
       }
       const shouldBeAdmin = adminSet.has(m.email.toLowerCase()) || m.role === 'admin';
@@ -378,6 +391,10 @@ function ensureDbSchema(db) {
   for (const ex of db.extraStudents) {
     if (ex.active === undefined) {
       ex.active = true;
+      changed = true;
+    }
+    if (!ex.password) {
+      ex.password = generateRandomPassword(8);
       changed = true;
     }
     const shouldBeAdmin = adminSet.has(ex.email.toLowerCase()) || ex.role === 'admin';
@@ -440,6 +457,7 @@ function getAllAccounts(db) {
         name: m.name,
         email: m.email,
         altEmail: m.altEmail || '',
+        password: m.password || '',
         groupOrder: g.order,
         groupName: g.name,
         role: isAdmin ? 'admin' : 'student',
@@ -455,6 +473,7 @@ function getAllAccounts(db) {
       name: ex.name,
       email: ex.email,
       altEmail: ex.altEmail || '',
+      password: ex.password || '',
       groupOrder: ex.groupOrder || null,
       groupName: ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
       role: isAdmin ? 'admin' : 'student',
@@ -465,7 +484,7 @@ function getAllAccounts(db) {
   return accounts;
 }
 
-// Lookup student/admin info by email or student ID
+// Lookup student/admin info by student ID (or email)
 function findStudent(db, query) {
   if (!query) return null;
   const q = query.trim().toLowerCase();
@@ -474,8 +493,7 @@ function findStudent(db, query) {
   for (const acc of accounts) {
     const idMatch = acc.id.toLowerCase() === q || `s${acc.id.toLowerCase()}` === q;
     const emailMatch = acc.email.toLowerCase() === q || (acc.altEmail && acc.altEmail.toLowerCase() === q);
-    const nameMatch = acc.name.toLowerCase() === q;
-    if (idMatch || emailMatch || nameMatch) {
+    if (idMatch || emailMatch) {
       return acc;
     }
   }
@@ -644,21 +662,28 @@ app.get('/api/portal-data', (req, res) => {
   });
 });
 
-// 2. Authenticate student/admin via Google OAuth email or student ID
+// 2. Authenticate student/admin via Student ID + Password
 app.post('/api/auth/login', (req, res) => {
-  const { emailOrId } = req.body;
+  const { studentId, emailOrId, password } = req.body;
+  const query = studentId || emailOrId;
   const db = loadDb();
-  const student = findStudent(db, emailOrId);
+  const student = findStudent(db, query);
 
   if (!student) {
     return res.status(404).json({
-      error: '找不到對應的組員學號或學校信箱，請確認輸入是否為名單內的學校信箱（如 s25101114@stu.edu.tw）。'
+      error: '找不到對應的學號，請確認輸入的學號是否正確（例如：25101114）。'
+    });
+  }
+
+  if (!password || String(password).trim() !== String(student.password)) {
+    return res.status(401).json({
+      error: '密碼錯誤，請確認您的隨機登入密碼是否輸入正確（注意大小寫）。'
     });
   }
 
   if (student.active === false) {
     return res.status(403).json({
-      error: '此帳號目前已被管理員停用，請聯繫管理員（s25101114@stu.edu.tw）。'
+      error: '此帳號目前已被管理員停用，請聯繫管理員（學號 25101114）。'
     });
   }
 
@@ -862,15 +887,16 @@ function verifyAdminMiddleware(req, res, next) {
 // 6. Admin: Create or Add a new student/admin account
 app.post('/api/admin/accounts', verifyAdminMiddleware, async (req, res) => {
   const db = req.db;
-  const { id, name, email, groupOrder, role } = req.body;
+  const { id, name, email, password, groupOrder, role } = req.body;
 
-  if (!id || !name || !email) {
-    return res.status(400).json({ error: '請填寫完整的學號、姓名與學校信箱' });
+  if (!id || !name) {
+    return res.status(400).json({ error: '請填寫完整的學號與姓名' });
   }
 
   const cleanId = String(id).trim();
   const cleanName = String(name).trim();
-  const cleanEmail = String(email).trim().toLowerCase();
+  const cleanEmail = String(email || `s${cleanId}@stu.edu.tw`).trim().toLowerCase();
+  const cleanPassword = password && String(password).trim() ? String(password).trim() : generateRandomPassword(8);
   const targetRole = role === 'admin' ? 'admin' : 'student';
   const targetGroupOrder = groupOrder ? Number(groupOrder) : null;
 
@@ -890,6 +916,7 @@ app.post('/api/admin/accounts', verifyAdminMiddleware, async (req, res) => {
     id: cleanId,
     name: cleanName,
     email: cleanEmail,
+    password: cleanPassword,
     role: targetRole,
     active: true
   };
@@ -913,11 +940,11 @@ app.post('/api/admin/accounts', verifyAdminMiddleware, async (req, res) => {
   res.json({ success: true, account: newMember });
 });
 
-// 7. Admin: Update an existing account (change name, ID, email, groupOrder, role, active status)
+// 7. Admin: Update an existing account (change name, ID, email, password, groupOrder, role, active status)
 app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req, res) => {
   const db = req.db;
   const originalEmail = decodeURIComponent(req.params.originalEmail).trim().toLowerCase();
-  const { id, name, email, groupOrder, role, active } = req.body;
+  const { id, name, email, password, groupOrder, role, active } = req.body;
 
   const cleanId = String(id || '').trim();
   const cleanName = String(name || '').trim();
@@ -928,20 +955,20 @@ app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req,
 
   // Prevent removing admin privilege from primary admin s25101114@stu.edu.tw if trying to disable self
   if (originalEmail === 's25101114@stu.edu.tw' && (!targetActive || targetRole !== 'admin')) {
-    return res.status(400).json({ error: '預設系統主管理員 (s25101114@stu.edu.tw) 不可被停用或移除管理員權限' });
+    return res.status(400).json({ error: '預設系統主管理員 (25101114 / s25101114@stu.edu.tw) 不可被停用或移除管理員權限' });
   }
 
   // Locate and remove from current group or extraStudents
   let foundMember = null;
   for (const g of db.groups) {
-    const idx = g.members.findIndex(m => m.email.toLowerCase() === originalEmail);
+    const idx = g.members.findIndex(m => m.email.toLowerCase() === originalEmail || m.id.toLowerCase() === originalEmail);
     if (idx >= 0) {
       foundMember = g.members.splice(idx, 1)[0];
       break;
     }
   }
   if (!foundMember) {
-    const idx = (db.extraStudents || []).findIndex(m => m.email.toLowerCase() === originalEmail);
+    const idx = (db.extraStudents || []).findIndex(m => m.email.toLowerCase() === originalEmail || m.id.toLowerCase() === originalEmail);
     if (idx >= 0) {
       foundMember = db.extraStudents.splice(idx, 1)[0];
     }
@@ -962,6 +989,7 @@ app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req,
     id: cleanId || foundMember.id,
     name: cleanName || foundMember.name,
     email: cleanEmail,
+    password: password && String(password).trim() ? String(password).trim() : (foundMember.password || generateRandomPassword(8)),
     role: targetRole,
     active: targetActive
   };
@@ -1290,10 +1318,10 @@ app.get('/api/admin/export-excel', verifyAdminMiddleware, async (req, res) => {
       { width: 32 }
     ];
 
-    // ==================== SHEET 3: 學生與管理員帳號名單 ====================
+    // ==================== SHEET 3: 學生與管理員帳號密碼名單 ====================
     const wsAccounts = workbook.addWorksheet('學生與管理員帳號名單');
     const accHeaderRow = wsAccounts.getRow(1);
-    accHeaderRow.values = ['所屬組別', '學號', '姓名', '學校 Google 信箱', '系統角色權限', '帳號狀態'];
+    accHeaderRow.values = ['所屬組別', '登入帳號 (學號)', '登入密碼 (隨機生成)', '姓名', '學校 Google 信箱', '系統角色權限', '帳號狀態'];
     accHeaderRow.height = 24;
     accHeaderRow.eachCell(cell => {
       cell.font = { name: 'Microsoft JhengHei', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -1306,6 +1334,7 @@ app.get('/api/admin/export-excel', verifyAdminMiddleware, async (req, res) => {
       row.values = [
         a.groupOrder ? `第 ${a.groupOrder} 組` : '未分組',
         a.id,
+        a.password || '',
         a.name,
         a.email,
         a.isAdmin ? '系統管理員 (Admin)' : '一般學生 (Student)',
@@ -1316,7 +1345,8 @@ app.get('/api/admin/export-excel', verifyAdminMiddleware, async (req, res) => {
 
     wsAccounts.columns = [
       { width: 14 },
-      { width: 16 },
+      { width: 18 },
+      { width: 20 },
       { width: 18 },
       { width: 28 },
       { width: 22 },

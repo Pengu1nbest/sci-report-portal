@@ -46,14 +46,16 @@
           "name": "蕭佳和",
           "email": "s24101107@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "cZNWFh7B"
         },
         {
           "id": "24101114",
           "name": "陳秉瑋",
           "email": "s24101114@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "gxcCBSBy"
         }
       ],
       "title": "狗1歲不是人類7歲？研究：牠可能已經31歲了",
@@ -77,7 +79,8 @@
           "name": "黃坤烽",
           "email": "s24101106@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "YdyQqRL7"
         }
       ],
       "title": "如何破解科學新聞的迷思？假資訊與真科學的社群交鋒！",
@@ -101,7 +104,8 @@
           "name": "李宜潔",
           "email": "s25101108@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "MSnaQwVE"
         },
         {
           "id": "25101115",
@@ -109,7 +113,8 @@
           "email": "s25101115@stu.edu.tw",
           "altEmail": "yiqingo211@gmail.com",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "E5FwC2Pt"
         }
       ],
       "title": "渡渡鳥：我不笨，只是沒學過怕人類",
@@ -133,14 +138,16 @@
           "name": "姜毓庭",
           "email": "s25101101@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "hYKhiUHH"
         },
         {
           "id": "25101113",
           "name": "簡呈凱",
           "email": "s25101113@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "4aNcT2V2"
         }
       ],
       "title": "打打電動，感覺更幸福",
@@ -164,14 +171,16 @@
           "name": "張亦傑",
           "email": "s25101114@stu.edu.tw",
           "active": true,
-          "role": "admin"
+          "role": "admin",
+          "password": "AtZXcAzc"
         },
         {
           "id": "25101128",
           "name": "唐湘婷",
           "email": "s25101128@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "xgkjUERj"
         }
       ],
       "title": "纖維不夠，腸道細菌可能開始吃你的腸黏膜",
@@ -195,7 +204,8 @@
           "name": "楊錢秉秝",
           "email": "s25101106@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "jY6kF9tK"
         }
       ],
       "title": "跨越死亡之路：地下通道減少80%路殺",
@@ -219,14 +229,16 @@
           "name": "謝仁凱",
           "email": "s25101109@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "xQLr3hPs"
         },
         {
           "id": "25101105",
           "name": "蔡凱宇",
           "email": "s25101105@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "mpabWXa9"
         }
       ],
       "title": "出門上班一整天，該為家中貓咪開冷氣嗎？",
@@ -250,14 +262,16 @@
           "name": "武文成",
           "email": "s25101117@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "sMgJ9QKm"
         },
         {
           "id": "25101120",
           "name": "阮黃如氏竹玲",
           "email": "s25101120@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "6i3cgSEj"
         }
       ],
       "title": "臺灣海上犯罪網絡特徵與行為模式",
@@ -281,14 +295,16 @@
           "name": "阮文武",
           "email": "s25101126@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "2rvMqEzF"
         },
         {
           "id": "25101127",
           "name": "阮俊英",
           "email": "s25101127@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "hhzfyQWX"
         }
       ],
       "title": "霸王龍體溫之謎簡報",
@@ -312,14 +328,16 @@
           "name": "團氏秋紅",
           "email": "s25101118@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "PggL7GJv"
         },
         {
           "id": "25101119",
           "name": "阮氏玄鶬",
           "email": "s25101119@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "vtbrkQPK"
         }
       ],
       "title": "早餐太晚吃會影響壽命？",
@@ -343,14 +361,16 @@
           "name": "阮氏夢兒",
           "email": "s25101122@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "33egMVE3"
         },
         {
           "id": "25101123",
           "name": "阮氏明書",
           "email": "s25101123@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "jc6JQNnC"
         }
       ],
       "title": "沒抽菸也會中招！這種罕見基因讓肺癌風險狂飆60倍",
@@ -374,14 +394,16 @@
           "name": "杜氏紅蓉",
           "email": "s25101125@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "8YQ8JdP4"
         },
         {
           "id": "25101124",
           "name": "阮氏美影",
           "email": "s25101124@stu.edu.tw",
           "active": true,
-          "role": "student"
+          "role": "student",
+          "password": "Gzig5AiQ"
         }
       ],
       "title": "野外實驗發現：鯊魚聽力遠超預期（霸王龍體溫與內溫性研究）",
@@ -413,7 +435,8 @@
       "email": "s25101129@stu.edu.tw",
       "groupOrder": null,
       "active": true,
-      "role": "student"
+      "role": "student",
+      "password": "bDFaAs5j"
     },
     {
       "id": "25101121",
@@ -421,7 +444,8 @@
       "email": "s25101121@stu.edu.tw",
       "groupOrder": null,
       "active": true,
-      "role": "student"
+      "role": "student",
+      "password": "zK8xY84b"
     }
   ],
   "ratings": [

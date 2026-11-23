@@ -1,6 +1,6 @@
 // State Management (Dual-mode: supports both Node.js Backend & Static GitHub Pages + Google Apps Script)
 const state = {
-  user: null, // { id, name, email, groupOrder, groupName, role, isAdmin, active }
+  user: null, // { id, name, email, password, groupOrder, groupName, role, isAdmin, active }
   admins: ['s25101114@stu.edu.tw'],
   criteria: [],
   groups: [],
@@ -35,94 +35,21 @@ const GROUP_CLOUD_MAP = {
   12: { formId: '1yETAYtxGfCxRat3H59Pa070Ap5aGL2pQ9iuHb-xAjro', sheetId: '1701gKKXLTG_BEc0Vq4R-7B0Y1AN7Ukn4nPELWQuDBW4', qrDriveId: '18dSDKOP6JR3og6Mzyvuo0sCoEe-p43AB' }
 };
 
+function generateRandomPasswordClient(len = 8) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < len; i++) {
+    out += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return out;
+}
+
 // Initialize app on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
   loadSavedUser();
   bindEvents();
   await fetchPortalData();
-  initGoogleIdentityServices();
 });
-
-// ==================== GOOGLE IDENTITY SERVICES (OAUTH 2.0) ====================
-function initGoogleIdentityServices() {
-  const container = document.getElementById('google-gsi-button-container');
-  const hint = document.getElementById('google-gsi-hint');
-  if (!container) return;
-
-  const clientIdInput = document.getElementById('input-google-client-id');
-  const gasUrlInput = document.getElementById('input-gas-webapp-url');
-  if (clientIdInput) clientIdInput.value = state.googleClientId;
-  if (gasUrlInput) gasUrlInput.value = state.gasWebAppUrl;
-
-  if (state.googleClientId && window.google && window.google.accounts && window.google.accounts.id) {
-    try {
-      window.google.accounts.id.initialize({
-        client_id: state.googleClientId,
-        callback: handleGoogleCredentialResponse,
-        auto_select: false
-      });
-      container.innerHTML = '';
-      window.google.accounts.id.renderButton(container, {
-        theme: 'outline',
-        size: 'large',
-        text: 'signin_with',
-        shape: 'rectangular',
-        locale: 'zh_TW'
-      });
-      if (hint) hint.textContent = '已啟用 Google OAuth 2.0 官方憑證驗證';
-      return;
-    } catch (e) {
-      console.warn('GSI init warning:', e);
-    }
-  }
-
-  // Fallback interactive Google Account login button when Client ID is not yet configured
-  container.innerHTML = `
-    <button type="button" class="btn btn-outline btn-sm" onclick="triggerGoogleAccountPrompt()" style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; background:#fff;">
-      <svg width="16" height="16" viewBox="0 0 48 48">
-        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-      </svg>
-      <span>使用 Google 學校帳號登入</span>
-    </button>
-  `;
-}
-
-// Decode Google JWT ID Token from Official Google Identity Services
-window.handleGoogleCredentialResponse = async function (response) {
-  try {
-    const jwt = response.credential;
-    const base64Url = jwt.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    const payload = JSON.parse(jsonPayload);
-    if (payload && payload.email) {
-      await performLogin(payload.email);
-    }
-  } catch (err) {
-    showToast('Google 憑證解析失敗：' + err.message, 'error');
-  }
-};
-
-window.triggerGoogleAccountPrompt = function () {
-  const input = document.getElementById('input-login-account');
-  if (input && input.value.trim()) {
-    performLogin(input.value.trim());
-    return;
-  }
-  const email = prompt('請輸入您的學校 Google 帳號信箱（例如 s25101114@stu.edu.tw）：', 's25101114@stu.edu.tw');
-  if (email && email.trim()) {
-    document.getElementById('input-login-account').value = email.trim();
-    performLogin(email.trim());
-  }
-};
 
 // ==================== STATIC / LOCAL DB ENGINE (FOR GITHUB PAGES) ====================
 function buildAccountsFromDb(db) {
@@ -130,12 +57,13 @@ function buildAccountsFromDb(db) {
   const accounts = [];
   for (const g of db.groups || []) {
     for (const m of g.members || []) {
-      const isAdmin = adminSet.has(m.email.toLowerCase()) || m.role === 'admin';
+      const isAdmin = adminSet.has(m.email.toLowerCase()) || m.role === 'admin' || m.id === '25101114';
       accounts.push({
         id: m.id,
         name: m.name,
         email: m.email,
         altEmail: m.altEmail || '',
+        password: m.password || '',
         groupOrder: g.order,
         groupName: g.name,
         role: isAdmin ? 'admin' : 'student',
@@ -151,6 +79,7 @@ function buildAccountsFromDb(db) {
       name: ex.name,
       email: ex.email,
       altEmail: ex.altEmail || '',
+      password: ex.password || '',
       groupOrder: ex.groupOrder || null,
       groupName: ex.groupOrder ? `第${ex.groupOrder}組` : '未分組/其他',
       role: isAdmin ? 'admin' : 'student',
@@ -265,7 +194,6 @@ function saveStaticDb() {
   hydrateStaticState(rawDb);
 }
 
-// Optional call to Google Apps Script Web App when hosted on GitHub Pages
 async function callGasWebApp(payload) {
   if (!state.gasWebAppUrl) return false;
   try {
@@ -287,11 +215,11 @@ function loadSavedUser() {
     const raw = localStorage.getItem('sci_portal_user');
     if (raw) {
       state.user = JSON.parse(raw);
-      updateUserTopbar();
     }
   } catch (e) {
     console.warn('Could not load saved user:', e);
   }
+  updateUserTopbar();
 }
 
 function saveUser(user) {
@@ -310,21 +238,28 @@ function isUserAdmin() {
   return Boolean(
     state.user.isAdmin ||
       state.user.role === 'admin' ||
+      state.user.id === '25101114' ||
       (state.admins || []).some(e => e.toLowerCase() === (state.user.email || '').toLowerCase())
   );
 }
 
+// Enforce Mandatory Login Gate: hide #portal-main until state.user is authenticated
 function updateUserTopbar() {
   const badge = document.getElementById('user-badge');
-  const loginBtn = document.getElementById('btn-open-login');
+  const syncBtn = document.getElementById('btn-sync-google');
   const myTabBadge = document.getElementById('my-group-tab-badge');
   const adminTag = document.getElementById('user-display-admin');
   const adminNavTab = document.getElementById('nav-tab-admin');
   const masterExportBtn = document.getElementById('btn-master-export-excel');
+  const loginGate = document.getElementById('login-gate-screen');
+  const portalMain = document.getElementById('portal-main');
 
   if (state.user) {
+    if (loginGate) loginGate.classList.add('hidden');
+    if (portalMain) portalMain.classList.remove('hidden');
+    if (syncBtn) syncBtn.classList.remove('hidden');
+
     badge.classList.remove('hidden');
-    loginBtn.classList.add('hidden');
     document.getElementById('user-avatar').textContent = state.user.name.charAt(0);
     document.getElementById('user-display-name').textContent = `${state.user.name} (${state.user.id})`;
     document.getElementById('user-display-group').textContent = state.user.groupOrder
@@ -351,8 +286,12 @@ function updateUserTopbar() {
       }
     }
   } else {
+    // Not logged in: lock the portal and show mandatory Login Gate
+    if (loginGate) loginGate.classList.remove('hidden');
+    if (portalMain) portalMain.classList.add('hidden');
+    if (syncBtn) syncBtn.classList.add('hidden');
+
     badge.classList.add('hidden');
-    loginBtn.classList.remove('hidden');
     myTabBadge.classList.add('hidden');
     adminTag.classList.add('hidden');
     adminNavTab.classList.add('hidden');
@@ -363,13 +302,12 @@ function updateUserTopbar() {
 // Client-side & Server-side Excel (.xlsx) Export
 window.exportAllScoresExcel = async function () {
   if (!isUserAdmin()) {
-    showToast('僅限管理員（如 s25101114@stu.edu.tw）可匯出分數總覽 Excel 檔', 'error');
+    showToast('僅限管理員（學號 25101114）可匯出分數總覽 Excel 檔', 'error');
     return;
   }
 
   showToast('正在產生「所有組別分數總覽 Excel (.xlsx)」檔案...', 'info');
 
-  // If running with local Node.js backend, prefer styled ExcelJS endpoint
   if (!state.isStaticMode) {
     try {
       const res = await fetch(`/api/admin/export-excel?adminEmail=${encodeURIComponent(state.user.email)}`, {
@@ -395,7 +333,6 @@ window.exportAllScoresExcel = async function () {
     }
   }
 
-  // Client-side SheetJS (.xlsx) generation (Works on GitHub Pages without any backend server!)
   if (window.XLSX) {
     try {
       const wb = window.XLSX.utils.book_new();
@@ -403,7 +340,7 @@ window.exportAllScoresExcel = async function () {
       // Sheet 1: 分組報告評分總覽
       const summaryRows = [
         ['科技文選 分組報告評分總覽表（五項指標各 20 分，滿分 100 分）'],
-        [`匯出時間：${new Date().toLocaleString('zh-TW')} ｜ 匯出管理員：${state.user.email}`],
+        [`匯出時間：${new Date().toLocaleString('zh-TW')} ｜ 匯出管理員：${state.user.name} (${state.user.id})`],
         [],
         [
           '上台順序',
@@ -455,7 +392,12 @@ window.exportAllScoresExcel = async function () {
       state.ratings.forEach(r => {
         const grp = state.groups.find(g => g.order === r.groupOrder);
         const sc = r.scores || {};
-        const tot = Number(sc.content || 0) + Number(sc.visuals || 0) + Number(sc.delivery || 0) + Number(sc.qna || 0) + Number(sc.teamwork || 0);
+        const tot =
+          Number(sc.content || 0) +
+          Number(sc.visuals || 0) +
+          Number(sc.delivery || 0) +
+          Number(sc.qna || 0) +
+          Number(sc.teamwork || 0);
         ratingRows.push([
           `第 ${r.groupOrder} 組`,
           grp ? grp.title : '',
@@ -474,12 +416,13 @@ window.exportAllScoresExcel = async function () {
       const ws2 = window.XLSX.utils.aoa_to_sheet(ratingRows);
       window.XLSX.utils.book_append_sheet(wb, ws2, '各組評分明細紀錄');
 
-      // Sheet 3: 學生與管理員帳號名單
-      const accRows = [['所屬組別', '學號', '姓名', '學校 Google 信箱', '角色權限', '狀態']];
+      // Sheet 3: 學生與管理員帳號密碼名單
+      const accRows = [['所屬組別', '登入帳號 (學號)', '登入密碼 (隨機生成)', '姓名', '學校 Google 信箱', '角色權限', '狀態']];
       state.accounts.forEach(a => {
         accRows.push([
           a.groupOrder ? `第 ${a.groupOrder} 組` : '未分組',
           a.id,
+          a.password || '',
           a.name,
           a.email,
           a.isAdmin ? '系統管理員 (Admin)' : '一般學生 (Student)',
@@ -515,23 +458,41 @@ async function fetchPortalData() {
     state.classStats = data.classStats || {};
     state.googleResources = data.googleResources || {};
   } catch (err) {
-    // Fallback to static mode for GitHub Pages
     state.isStaticMode = true;
     const savedStatic = localStorage.getItem('sci_portal_static_db');
+    const initRes = await fetch('./initial-db.json');
+    const initDb = await initRes.json();
+
     if (savedStatic) {
-      hydrateStaticState(JSON.parse(savedStatic));
+      const parsed = JSON.parse(savedStatic);
+      // Ensure passwords exist if migrating from older localStorage
+      const pwdMap = {};
+      (initDb.groups || []).forEach(g => (g.members || []).forEach(m => (pwdMap[m.id] = m.password)));
+      (initDb.extraStudents || []).forEach(ex => (pwdMap[ex.id] = ex.password));
+      (parsed.groups || []).forEach(g =>
+        (g.members || []).forEach(m => {
+          if (!m.password) m.password = pwdMap[m.id] || generateRandomPasswordClient(8);
+        })
+      );
+      (parsed.extraStudents || []).forEach(ex => {
+        if (!ex.password) ex.password = pwdMap[ex.id] || generateRandomPasswordClient(8);
+      });
+      hydrateStaticState(parsed);
     } else {
-      const initRes = await fetch('./initial-db.json');
-      const initDb = await initRes.json();
       hydrateStaticState(initDb);
     }
   }
 
   if (state.user) {
-    const latest = state.accounts.find(a => a.email.toLowerCase() === (state.user.email || '').toLowerCase());
-    if (latest) {
+    const latest = state.accounts.find(
+      a => a.id.toLowerCase() === (state.user.id || '').toLowerCase() || a.email.toLowerCase() === (state.user.email || '').toLowerCase()
+    );
+    if (latest && latest.active !== false) {
       state.user = latest;
       localStorage.setItem('sci_portal_user', JSON.stringify(latest));
+    } else if (latest && latest.active === false) {
+      state.user = null;
+      localStorage.removeItem('sci_portal_user');
     }
   }
 
@@ -540,6 +501,7 @@ async function fetchPortalData() {
 }
 
 function renderAll() {
+  if (!state.user) return;
   renderCriteriaChips();
   renderClassStats();
   renderMasterTable();
@@ -547,7 +509,6 @@ function renderAll() {
   renderMyGroupWorkspace();
   renderAdminBackend();
   renderCloudResources();
-  renderQuickStudentPicker();
 }
 
 // 1. Criteria Chips (5 x 20 pts = 100 pts)
@@ -885,7 +846,7 @@ function renderAdminBackend() {
   const accTbody = document.getElementById('admin-accounts-tbody');
   accTbody.innerHTML = filteredAccounts
     .map(acc => {
-      const isPrimaryAdmin = acc.email.toLowerCase() === 's25101114@stu.edu.tw';
+      const isPrimaryAdmin = acc.email.toLowerCase() === 's25101114@stu.edu.tw' || acc.id === '25101114';
       return `
         <tr>
           <td>
@@ -893,9 +854,14 @@ function renderAdminBackend() {
           </td>
           <td>
             <strong>${escapeHtml(acc.name)}</strong>
-            <div class="member-ids">學號：${escapeHtml(acc.id)}</div>
           </td>
-          <td style="font-family:var(--font-mono); font-size:12.5px;">
+          <td style="font-family:var(--font-mono); font-weight:700;">
+            ${escapeHtml(acc.id)}
+          </td>
+          <td>
+            <span class="pwd-code-badge">${escapeHtml(acc.password || '')}</span>
+          </td>
+          <td style="font-family:var(--font-mono); font-size:12px; color:var(--text-secondary);">
             ${escapeHtml(acc.email)}
           </td>
           <td>
@@ -915,7 +881,7 @@ function renderAdminBackend() {
           <td>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
               <button type="button" class="btn btn-outline btn-sm" onclick="populateAdminEditAccount('${escapeAttr(acc.email)}')">
-                編輯帳號
+                編輯 / 重設密碼
               </button>
               ${
                 !isPrimaryAdmin
@@ -1035,13 +1001,14 @@ window.populateAdminEditAccount = function (email) {
   document.getElementById('admin-account-form-title').textContent = `編輯帳號：${acc.name} (${acc.id})`;
   document.getElementById('admin-acc-original-email').value = acc.email;
   document.getElementById('admin-acc-id').value = acc.id;
+  document.getElementById('admin-acc-password').value = acc.password || '';
   document.getElementById('admin-acc-name').value = acc.name;
   document.getElementById('admin-acc-email').value = acc.email;
   document.getElementById('admin-acc-group').value = acc.groupOrder ? String(acc.groupOrder) : '';
   document.getElementById('admin-acc-role').value = acc.isAdmin ? 'admin' : 'student';
   document.getElementById('admin-acc-active').value = acc.active !== false ? 'true' : 'false';
 
-  document.getElementById('btn-admin-save-acc').textContent = '更新帳號設定';
+  document.getElementById('btn-admin-save-acc').textContent = '更新帳號與密碼設定';
   document.getElementById('btn-admin-cancel-edit').classList.remove('hidden');
 };
 
@@ -1049,19 +1016,21 @@ function resetAdminAccountForm() {
   document.getElementById('admin-account-form-title').textContent = '新增學生 / 管理員帳號';
   document.getElementById('admin-acc-original-email').value = '';
   document.getElementById('admin-acc-id').value = '';
+  document.getElementById('admin-acc-password').value = '';
   document.getElementById('admin-acc-name').value = '';
   document.getElementById('admin-acc-email').value = '';
   document.getElementById('admin-acc-group').value = '';
   document.getElementById('admin-acc-role').value = 'student';
   document.getElementById('admin-acc-active').value = 'true';
-  document.getElementById('btn-admin-save-acc').textContent = '儲存帳號設定';
+  document.getElementById('btn-admin-save-acc').textContent = '儲存帳號與密碼設定';
   document.getElementById('btn-admin-cancel-edit').classList.add('hidden');
 }
 
 function upsertStaticAccount(originalEmail, payload) {
   const cleanId = String(payload.id).trim();
   const cleanName = String(payload.name).trim();
-  const cleanEmail = String(payload.email).trim().toLowerCase();
+  const cleanEmail = String(payload.email || `s${cleanId}@stu.edu.tw`).trim().toLowerCase();
+  const cleanPassword = payload.password && String(payload.password).trim() ? String(payload.password).trim() : generateRandomPasswordClient(8);
   const targetRole = payload.role === 'admin' ? 'admin' : 'student';
   const targetGroupOrder = payload.groupOrder ? Number(payload.groupOrder) : null;
   const targetActive = payload.active !== false;
@@ -1083,6 +1052,7 @@ function upsertStaticAccount(originalEmail, payload) {
     id: cleanId,
     name: cleanName,
     email: cleanEmail,
+    password: cleanPassword,
     role: targetRole,
     active: targetActive
   };
@@ -1110,6 +1080,7 @@ window.toggleAccountAdminRole = async function (email) {
       id: acc.id,
       name: acc.name,
       email: acc.email,
+      password: acc.password,
       groupOrder: acc.groupOrder,
       role: newRole,
       active: acc.active
@@ -1130,6 +1101,7 @@ window.toggleAccountAdminRole = async function (email) {
         id: acc.id,
         name: acc.name,
         email: acc.email,
+        password: acc.password,
         groupOrder: acc.groupOrder,
         role: newRole,
         active: acc.active
@@ -1151,7 +1123,7 @@ window.deleteAdminAccount = async function (email) {
   if (!isUserAdmin()) return;
   const acc = state.accounts.find(a => a.email.toLowerCase() === email.toLowerCase());
   if (!acc) return;
-  if (!confirm(`確定要刪除帳號「${acc.name} (${acc.email})」嗎？此操作也會同步更新分組名單。`)) return;
+  if (!confirm(`確定要刪除帳號「${acc.name} (${acc.id})」嗎？此操作也會同步更新分組名單。`)) return;
 
   if (state.isStaticMode) {
     const target = acc.email.toLowerCase();
@@ -1162,7 +1134,7 @@ window.deleteAdminAccount = async function (email) {
     state.admins = (state.admins || []).filter(a => a.toLowerCase() !== target);
     saveStaticDb();
     renderAll();
-    showToast(`已刪除帳號 ${acc.name} (${acc.email})`, 'success');
+    showToast(`已刪除帳號 ${acc.name} (${acc.id})`, 'success');
     return;
   }
 
@@ -1177,7 +1149,7 @@ window.deleteAdminAccount = async function (email) {
       return;
     }
     await fetchPortalData();
-    showToast(`已刪除帳號 ${acc.name} (${acc.email})`, 'success');
+    showToast(`已刪除帳號 ${acc.name} (${acc.id})`, 'success');
   } catch (err) {
     showToast('刪除失敗：' + err.message, 'error');
   }
@@ -1287,7 +1259,7 @@ window.adminDeleteRating = async function (ratingId) {
   }
 };
 
-// 7. Cloud Resources Directory (Master Sheets + All 12 Groups Forms, Response Sheets & QR Codes)
+// 7. Cloud Resources Directory
 function renderCloudResources() {
   const container = document.getElementById('cloud-resources-list');
   const masterItems = [
@@ -1371,64 +1343,49 @@ function renderCloudResources() {
   container.innerHTML = masterHtml + groupCardsHtml;
 }
 
-// 8. Quick Student Picker inside Login Modal
-function renderQuickStudentPicker() {
-  const grid = document.getElementById('quick-student-grid');
-  const buttons = [];
-
-  for (const g of state.groups) {
-    for (const m of g.members) {
-      const isAdmin = m.role === 'admin' || (state.admins || []).includes(m.email.toLowerCase());
-      buttons.push(`
-        <button type="button" class="student-pick-btn" onclick="quickLogin('${escapeAttr(m.email)}')">
-          <span class="pick-group-tag">
-            第 ${g.order} 組 ${isAdmin ? '· ★ 管理員' : ''}
-          </span>
-          <span class="pick-name">${escapeHtml(m.name)} (${escapeHtml(m.id)})</span>
-          <span class="pick-email">${escapeHtml(m.email)}</span>
-        </button>
-      `);
-    }
-  }
-
-  grid.innerHTML = buttons.join('');
-}
-
-window.quickLogin = async function (emailOrId) {
-  document.getElementById('input-login-account').value = emailOrId;
-  await performLogin(emailOrId);
-};
-
-async function performLogin(emailOrId) {
-  const errEl = document.getElementById('login-error-msg');
-  errEl.classList.add('hidden');
-  const q = (emailOrId || '').trim().toLowerCase();
+// 8. Authenticate with Student ID + Password
+async function performLogin(studentId, password) {
+  const errEl = document.getElementById('gate-login-error');
+  if (errEl) errEl.classList.add('hidden');
+  const q = (studentId || '').trim().toLowerCase();
+  const pwd = (password || '').trim();
 
   if (state.isStaticMode) {
     const matched = state.accounts.find(
       acc =>
         acc.id.toLowerCase() === q ||
         `s${acc.id.toLowerCase()}` === q ||
-        acc.email.toLowerCase() === q ||
-        (acc.altEmail && acc.altEmail.toLowerCase() === q) ||
-        acc.name.toLowerCase() === q
+        acc.email.toLowerCase() === q
     );
 
     if (!matched) {
-      errEl.textContent = '找不到對應的組員學號或學校信箱，請確認是否為名單內的學校信箱（如 s25101114@stu.edu.tw）。';
-      errEl.classList.remove('hidden');
+      if (errEl) {
+        errEl.textContent = '找不到對應的學號，請確認輸入的學號是否正確（例如：25101114）。';
+        errEl.classList.remove('hidden');
+      }
       return;
     }
+
+    if (!pwd || pwd !== String(matched.password)) {
+      if (errEl) {
+        errEl.textContent = '密碼錯誤，請確認您的 8 碼隨機密碼是否輸入正確（注意大小寫）。';
+        errEl.classList.remove('hidden');
+      }
+      return;
+    }
+
     if (matched.active === false) {
-      errEl.textContent = '此帳號目前已被管理員停用。';
-      errEl.classList.remove('hidden');
+      if (errEl) {
+        errEl.textContent = '此帳號目前已被管理員停用。';
+        errEl.classList.remove('hidden');
+      }
       return;
     }
 
     saveUser(matched);
-    closeModal('modal-login');
+    document.getElementById('gate-input-password').value = '';
     if (matched.isAdmin || matched.role === 'admin') {
-      showToast(`歡迎管理員 ${matched.name} (${matched.email}) 登入！已解鎖「管理員後台與帳號管理」`, 'success');
+      showToast(`歡迎管理員 ${matched.name} (${matched.id}) 登入！已解鎖「管理員後台與帳號管理」`, 'success');
     } else {
       showToast(`歡迎登入！${matched.name}（第 ${matched.groupOrder || '—'} 組）`, 'success');
     }
@@ -1439,31 +1396,36 @@ async function performLogin(emailOrId) {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ emailOrId })
+      body: JSON.stringify({ studentId: q, password: pwd })
     });
     const data = await res.json();
     if (!res.ok) {
-      errEl.textContent = data.error || '登入失敗';
-      errEl.classList.remove('hidden');
+      if (errEl) {
+        errEl.textContent = data.error || '登入失敗';
+        errEl.classList.remove('hidden');
+      }
       return;
     }
 
     saveUser(data.user);
-    closeModal('modal-login');
+    document.getElementById('gate-input-password').value = '';
 
     if (data.user.isAdmin || data.user.role === 'admin') {
-      showToast(`歡迎管理員 ${data.user.name} (${data.user.email}) 登入！已解鎖「管理員後台與帳號管理」`, 'success');
+      showToast(`歡迎管理員 ${data.user.name} (${data.user.id}) 登入！已解鎖「管理員後台與帳號管理」`, 'success');
     } else {
       showToast(`歡迎登入！${data.user.name}（第 ${data.user.groupOrder || '—'} 組）`, 'success');
     }
   } catch (err) {
-    errEl.textContent = '網路連線異常：' + err.message;
-    errEl.classList.remove('hidden');
+    if (errEl) {
+      errEl.textContent = '網路連線異常：' + err.message;
+      errEl.classList.remove('hidden');
+    }
   }
 }
 
-// 9. Open Rate & Detailed Breakdown Modal for a Group (5 criteria x 20 pts = 100 pts)
+// 9. Open Rate & Detailed Breakdown Modal for a Group
 window.openRateModal = function (groupOrder) {
+  if (!state.user) return;
   const group = state.groups.find(g => g.order === Number(groupOrder));
   if (!group) return;
 
@@ -1473,15 +1435,10 @@ window.openRateModal = function (groupOrder) {
   document.getElementById('rate-modal-members').textContent = `組員：${group.members.map(m => `${m.name} (${m.id})`).join('、')}`;
   document.getElementById('rate-modal-title').textContent = group.title || '未定';
 
-  let existingRating = null;
-  if (state.user) {
-    existingRating = (group.ratings || []).find(
-      r => r.reviewerEmail.toLowerCase() === state.user.email.toLowerCase()
-    );
-    document.getElementById('rate-identity-tag').textContent = `評分者：${state.user.name} (${state.user.id})`;
-  } else {
-    document.getElementById('rate-identity-tag').textContent = '評分者：尚未登入（點擊送出時將引導登入）';
-  }
+  const existingRating = (group.ratings || []).find(
+    r => r.reviewerEmail.toLowerCase() === state.user.email.toLowerCase()
+  );
+  document.getElementById('rate-identity-tag').textContent = `評分者：${state.user.name} (${state.user.id})`;
 
   const initialScores = existingRating
     ? existingRating.scores
@@ -1663,20 +1620,38 @@ function updateLiveRateTotal() {
 
 // ==================== EVENT LISTENERS ====================
 function bindEvents() {
-  document.getElementById('btn-open-login').addEventListener('click', () => openModal('modal-login'));
-  document.getElementById('btn-switch-user').addEventListener('click', () => openModal('modal-login'));
-  document.getElementById('btn-unauth-login').addEventListener('click', () => openModal('modal-login'));
+  // Mandatory Gate Login Form
+  const gateForm = document.getElementById('form-gate-login');
+  if (gateForm) {
+    gateForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const studentId = document.getElementById('gate-input-student-id').value;
+      const password = document.getElementById('gate-input-password').value;
+      await performLogin(studentId, password);
+    });
+  }
+
+  // Logout Button
+  const logoutBtn = document.getElementById('btn-logout-user');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      saveUser(null);
+      showToast('您已安全登出系統', 'info');
+    });
+  }
+
+  // Random password generator button in Admin Account Form
+  const genPwdBtn = document.getElementById('btn-gen-random-pwd');
+  if (genPwdBtn) {
+    genPwdBtn.addEventListener('click', () => {
+      document.getElementById('admin-acc-password').value = generateRandomPasswordClient(8);
+    });
+  }
 
   document.querySelectorAll('[data-close-modal]').forEach(btn => {
     btn.addEventListener('click', () => {
       closeModal(btn.getAttribute('data-close-modal'));
     });
-  });
-
-  document.getElementById('form-login').addEventListener('submit', async e => {
-    e.preventDefault();
-    const val = document.getElementById('input-login-account').value;
-    await performLogin(val);
   });
 
   // Save Google OAuth Client ID & GAS Web App URL
@@ -1688,8 +1663,7 @@ function bindEvents() {
       state.gasWebAppUrl = document.getElementById('input-gas-webapp-url').value.trim();
       localStorage.setItem('sci_google_client_id', state.googleClientId);
       localStorage.setItem('sci_gas_webapp_url', state.gasWebAppUrl);
-      initGoogleIdentityServices();
-      showToast('已儲存 Google OAuth 2.0 Client ID 與雲端 API 設定！', 'success');
+      showToast('已儲存雲端 API 設定！', 'success');
     });
   }
 
@@ -1740,10 +1714,12 @@ function bindEvents() {
     if (!isUserAdmin()) return;
 
     const originalEmail = document.getElementById('admin-acc-original-email').value.trim();
+    const cleanId = document.getElementById('admin-acc-id').value.trim();
     const payload = {
-      id: document.getElementById('admin-acc-id').value.trim(),
+      id: cleanId,
+      password: document.getElementById('admin-acc-password').value.trim(),
       name: document.getElementById('admin-acc-name').value.trim(),
-      email: document.getElementById('admin-acc-email').value.trim(),
+      email: document.getElementById('admin-acc-email').value.trim() || `s${cleanId}@stu.edu.tw`,
       groupOrder: document.getElementById('admin-acc-group').value,
       role: document.getElementById('admin-acc-role').value,
       active: document.getElementById('admin-acc-active').value === 'true'
@@ -1755,7 +1731,7 @@ function bindEvents() {
       upsertStaticAccount(originalEmail, payload);
       resetAdminAccountForm();
       renderAll();
-      showToast(isEdit ? '已更新帳號設定！' : '已成功新增帳號！', 'success');
+      showToast(isEdit ? '已更新帳號與密碼設定！' : '已成功新增帳號與隨機密碼！', 'success');
       return;
     }
 
@@ -1781,7 +1757,7 @@ function bindEvents() {
 
       resetAdminAccountForm();
       await fetchPortalData();
-      showToast(isEdit ? '已更新帳號設定並同步分組表！' : '已成功新增帳號並同步分組表！', 'success');
+      showToast(isEdit ? '已更新帳號與密碼設定！' : `已成功新增帳號（密碼：${data.account.password}）！`, 'success');
     } catch (err) {
       showToast('儲存帳號發生錯誤：' + err.message, 'error');
     }
@@ -1875,12 +1851,7 @@ function bindEvents() {
   // Submit Rating Form
   document.getElementById('form-rate-group').addEventListener('submit', async e => {
     e.preventDefault();
-    if (!state.user) {
-      closeModal('modal-rate');
-      openModal('modal-login');
-      showToast('請先登入您的學生帳號再送出評分', 'error');
-      return;
-    }
+    if (!state.user) return;
 
     const groupOrder = Number(document.getElementById('rate-group-order-input').value);
     const scores = {};
