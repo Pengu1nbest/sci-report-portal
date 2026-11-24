@@ -258,11 +258,24 @@ async function callGasWebApp(payload) {
   }
 }
 
+const INACTIVITY_LOGOUT_MS = 30 * 24 * 60 * 60 * 1000; // 30 days (1 month)
+
 function loadSavedUser() {
   try {
     const raw = localStorage.getItem('sci_portal_user');
+    const lastVisit = Number(localStorage.getItem('sci_portal_last_visit') || 0);
     if (raw) {
-      state.user = JSON.parse(raw);
+      if (lastVisit > 0 && Date.now() - lastVisit > INACTIVITY_LOGOUT_MS) {
+        localStorage.removeItem('sci_portal_user');
+        localStorage.removeItem('sci_portal_last_visit');
+        state.user = null;
+        setTimeout(() => {
+          showToast('因超過 30 天未造訪本網站，系統已自動登出，請重新登入。', 'info');
+        }, 300);
+      } else {
+        state.user = JSON.parse(raw);
+        localStorage.setItem('sci_portal_last_visit', String(Date.now()));
+      }
     }
   } catch (e) {
     console.warn('Could not load saved user:', e);
@@ -274,8 +287,10 @@ function saveUser(user) {
   state.user = user;
   if (user) {
     localStorage.setItem('sci_portal_user', JSON.stringify(user));
+    localStorage.setItem('sci_portal_last_visit', String(Date.now()));
   } else {
     localStorage.removeItem('sci_portal_user');
+    localStorage.removeItem('sci_portal_last_visit');
   }
   updateUserTopbar();
   renderAll();
@@ -292,11 +307,21 @@ function isUserAdmin() {
   );
 }
 
+function isTeacherUser() {
+  if (!state.user) return false;
+  return (
+    (state.user.id || '').toLowerCase() === 'teacher' ||
+    (state.user.email || '').toLowerCase() === 'teacher@stu.edu.tw'
+  );
+}
+
 // Enforce Mandatory Login Gate: hide #portal-main until state.user is authenticated
 function updateUserTopbar() {
   const badge = document.getElementById('user-badge');
   const syncBtn = document.getElementById('btn-sync-google');
   const myTabBadge = document.getElementById('my-group-tab-badge');
+  const myGroupNavTab = document.querySelector('[data-tab="tab-my-group"]');
+  const myGroupPanel = document.getElementById('tab-my-group');
   const adminTag = document.getElementById('user-display-admin');
   const adminNavTab = document.getElementById('nav-tab-admin');
   const masterExportBtn = document.getElementById('btn-master-export-excel');
@@ -314,6 +339,17 @@ function updateUserTopbar() {
     document.getElementById('user-display-group').textContent = state.user.groupOrder
       ? `第 ${state.user.groupOrder} 組`
       : state.user.groupName;
+
+    // Hide "我的組別與上傳報告" tab for teacher account
+    if (isTeacherUser()) {
+      if (myGroupNavTab) myGroupNavTab.classList.add('hidden');
+      if (myGroupPanel && myGroupPanel.classList.contains('active')) {
+        const scoresTab = document.getElementById('nav-tab-scores');
+        if (scoresTab) scoresTab.click();
+      }
+    } else {
+      if (myGroupNavTab) myGroupNavTab.classList.remove('hidden');
+    }
 
     if (state.user.groupOrder) {
       myTabBadge.textContent = `第 ${state.user.groupOrder} 組`;
