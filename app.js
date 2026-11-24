@@ -36,6 +36,100 @@ const GROUP_CLOUD_MAP = {
 };
 
 const PASSWORD_SALT = 'sci_report_portal_v1';
+const ACCOUNTS_GAS_URL = 'https://script.google.com/macros/s/AKfycbxVh2ghlRURIfeuV1Y8b-a_cu3SisIjPWepEwHhChVKy5OVMd_GAEQoqhYpTysD-xQb/exec';
+
+async function postAccountToCloud(payload) {
+  if (!ACCOUNTS_GAS_URL) return false;
+  try {
+    await fetch(ACCOUNTS_GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    return true;
+  } catch (e) {
+    console.warn('Accounts GAS POST warning:', e);
+    return false;
+  }
+}
+
+async function mergeCloudAccountsIntoDb(db) {
+  if (!ACCOUNTS_GAS_URL) return db;
+  try {
+    const res = await fetch(`${ACCOUNTS_GAS_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return db;
+    const data = await res.json();
+    if (!data || !data.success || !Array.isArray(data.accounts) || data.accounts.length === 0) {
+      return db;
+    }
+
+    const cloudMap = new Map();
+    const adminsSet = new Set((db.admins || ['teacher@stu.edu.tw', 's25101114@stu.edu.tw']).map(e => e.toLowerCase()));
+
+    for (const ca of data.accounts) {
+      const keyId = String(ca.id || '').trim().toLowerCase();
+      const keyEmail = String(ca.email || '').trim().toLowerCase();
+      if (keyId) cloudMap.set(keyId, ca);
+      if (keyEmail) cloudMap.set(keyEmail, ca);
+      if (ca.role === 'admin' && keyEmail) adminsSet.add(keyEmail);
+    }
+
+    const seenIds = new Set();
+    const applyCloud = member => {
+      const match =
+        cloudMap.get(String(member.id || '').trim().toLowerCase()) ||
+        cloudMap.get(String(member.email || '').trim().toLowerCase());
+      if (match) {
+        member.name = match.name || member.name;
+        member.email = match.email || member.email;
+        member.role = match.role || member.role;
+        member.active = match.active !== false;
+        if (match.passwordHash) {
+          member.password = match.passwordHash;
+          member.passwordHash = match.passwordHash;
+        }
+        member.passwordUpdatedAt = match.passwordUpdatedAt || null;
+        seenIds.add(String(match.id || '').trim().toLowerCase());
+      }
+    };
+
+    for (const g of db.groups || []) {
+      for (const m of g.members || []) applyCloud(m);
+    }
+    for (const ex of db.extraStudents || []) applyCloud(ex);
+
+    // Add any newly created accounts from cloud sheet that aren't in local db yet
+    db.extraStudents = db.extraStudents || [];
+    for (const ca of data.accounts) {
+      const cid = String(ca.id || '').trim().toLowerCase();
+      if (!cid || seenIds.has(cid)) continue;
+      const newObj = {
+        id: ca.id,
+        name: ca.name,
+        email: ca.email,
+        password: ca.passwordHash || ca.password || '',
+        passwordHash: ca.passwordHash || ca.password || '',
+        passwordUpdatedAt: ca.passwordUpdatedAt || null,
+        role: ca.role === 'admin' ? 'admin' : 'student',
+        active: ca.active !== false
+      };
+      if (ca.groupOrder) {
+        const grp = (db.groups || []).find(g => g.order === Number(ca.groupOrder));
+        if (grp) grp.members.push(newObj);
+        else db.extraStudents.push({ ...newObj, groupOrder: null });
+      } else {
+        db.extraStudents.push({ ...newObj, groupOrder: null });
+      }
+    }
+
+    db.admins = Array.from(adminsSet);
+    return db;
+  } catch (e) {
+    console.warn('Accounts GAS GET warning:', e);
+    return db;
+  }
+}
 
 function generateRandomPasswordClient(len = 8) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -568,9 +662,12 @@ async function fetchPortalData() {
         }
         ex.passwordHash = ex.password;
       }
+      await mergeCloudAccountsIntoDb(parsed);
       localStorage.setItem('sci_portal_static_db', JSON.stringify(parsed));
       hydrateStaticState(parsed);
     } else {
+      await mergeCloudAccountsIntoDb(initDb);
+      localStorage.setItem('sci_portal_static_db', JSON.stringify(initDb));
       hydrateStaticState(initDb);
     }
   }
@@ -1267,6 +1364,11 @@ async function upsertStaticAccount(originalEmail, payload) {
   }
 
   saveStaticDb();
+  await postAccountToCloud({
+    action: 'upsertAccount',
+    originalEmail: originalEmail || cleanEmail,
+    account: { ...memberObj, groupOrder: targetGroupOrder }
+  });
   return { memberObj, plainGenerated: !plainOrHash.startsWith('sha256$') ? plainOrHash : '' };
 }
 
@@ -1335,6 +1437,7 @@ window.deleteAdminAccount = async function (email) {
     state.extraStudents = (state.extraStudents || []).filter(m => m.email.toLowerCase() !== target);
     state.admins = (state.admins || []).filter(a => a.toLowerCase() !== target);
     saveStaticDb();
+    await postAccountToCloud({ action: 'deleteAccount', email: acc.email });
     renderAll();
     showToast(`已刪除帳號 ${acc.name} (${acc.id})`, 'success');
     return;
@@ -1665,6 +1768,13 @@ async function applyPasswordPolicyUpdate(action, newPassword = '') {
     }
 
     saveStaticDb();
+    await postAccountToCloud({
+      action: 'updatePassword',
+      id: state.user.id,
+      email: state.user.email,
+      passwordHash: newHash,
+      passwordUpdatedAt: nowIso
+    });
     const updatedUser = state.accounts.find(
       a => a.email.toLowerCase() === targetEmail || a.id.toLowerCase() === targetId
     );
@@ -1672,8 +1782,8 @@ async function applyPasswordPolicyUpdate(action, newPassword = '') {
     closeModal('modal-password-policy');
     showToast(
       action === 'keep'
-        ? '已沿用舊密碼，並成功刷新 180 天有效期！'
-        : '密碼修改成功（已加密儲存並記錄修改日期，180 天後將再次提醒）！',
+        ? '已沿用舊密碼，並已同步刷新 180 天有效期至雲端！'
+        : '密碼修改成功（已加密同步至雲端，手機與電腦皆可使用新密碼登入）！',
       'success'
     );
     return;
