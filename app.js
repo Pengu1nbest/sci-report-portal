@@ -451,6 +451,8 @@ function updateUserTopbar() {
     if (loginGate) loginGate.classList.add('hidden');
     if (portalMain) portalMain.classList.remove('hidden');
     if (syncBtn) syncBtn.classList.remove('hidden');
+    const menuBtnShow = document.getElementById('btn-mobile-menu');
+    if (menuBtnShow) menuBtnShow.classList.remove('hidden');
 
     badge.classList.remove('hidden');
     document.getElementById('user-avatar').textContent = state.user.name.charAt(0);
@@ -494,6 +496,9 @@ function updateUserTopbar() {
     if (loginGate) loginGate.classList.remove('hidden');
     if (portalMain) portalMain.classList.add('hidden');
     if (syncBtn) syncBtn.classList.add('hidden');
+    const menuBtnHide = document.getElementById('btn-mobile-menu');
+    if (menuBtnHide) menuBtnHide.classList.add('hidden');
+    if (typeof closeMobileMenu === 'function' && document.getElementById('mobile-drawer')) closeMobileMenu();
 
     badge.classList.add('hidden');
     myTabBadge.classList.add('hidden');
@@ -1199,6 +1204,30 @@ function renderAdminBackend() {
       `;
     })
     .join('');
+
+  // Mobile: simple tap-to-view account list (no spreadsheet-style table)
+  state.adminFilteredAccounts = filteredAccounts;
+  const mobileList = document.getElementById('admin-accounts-mobile-list');
+  if (mobileList) {
+    mobileList.innerHTML = filteredAccounts.length
+      ? filteredAccounts
+          .map((acc, i) => {
+            const rank = getAccountRank(acc);
+            const groupLabel = acc.id === 'teacher' ? '授課老師' : acc.groupOrder ? `第 ${acc.groupOrder} 組` : '未分組';
+            const roleIcon = rank === 2 ? '👑' : rank === 1 ? '🛡️' : '';
+            return `
+              <button type="button" class="account-mobile-item" onclick="openAccountDetail(${i})">
+                <div class="account-mobile-avatar">${escapeHtml((acc.name || '?').charAt(0))}</div>
+                <div class="account-mobile-main">
+                  <div class="account-mobile-name">${escapeHtml(acc.name)} ${roleIcon}${acc.active === false ? ' <span class="status-pill-disabled">已停用</span>' : ''}</div>
+                  <div class="account-mobile-sub">${escapeHtml(acc.id)} · ${groupLabel}</div>
+                </div>
+                <span class="account-mobile-chevron" aria-hidden="true">›</span>
+              </button>`;
+          })
+          .join('')
+      : '<p class="score-empty" style="padding:16px; text-align:center;">找不到符合的帳號</p>';
+  }
 
   const grpTbody = document.getElementById('admin-groups-tbody');
   grpTbody.innerHTML = state.groups
@@ -2617,6 +2646,113 @@ function bindEvents() {
     }
   });
 }
+
+// ==================== MOBILE: ACCOUNT DETAIL & HAMBURGER MENU ====================
+window.openAccountDetail = function (index) {
+  const acc = (state.adminFilteredAccounts || [])[index];
+  if (!acc) return;
+  const row = document.getElementById('admin-accounts-tbody').rows[index];
+  const cellHtml = n => (row && row.cells[n] ? row.cells[n].innerHTML : '');
+  const groupLabel = acc.id === 'teacher' ? '授課老師' : acc.groupOrder ? `第 ${acc.groupOrder} 組` : '未分組';
+  const pwDate = acc.passwordUpdatedAt ? new Date(acc.passwordUpdatedAt).toLocaleDateString('zh-TW') : '尚未修改（首次登入）';
+
+  document.getElementById('account-detail-title').textContent = acc.name;
+  document.getElementById('account-detail-subtitle').textContent = `${acc.id} · ${groupLabel}`;
+  document.getElementById('account-detail-body').innerHTML = `
+    <dl class="account-detail-list">
+      <div><dt>姓名</dt><dd>${escapeHtml(acc.name)}</dd></div>
+      <div><dt>登入帳號 (學號)</dt><dd class="mono">${escapeHtml(acc.id)}</dd></div>
+      <div><dt>組別</dt><dd>${groupLabel}</dd></div>
+      <div><dt>學校信箱</dt><dd class="mono" style="word-break:break-all;">${escapeHtml(acc.email)}</dd></div>
+      <div><dt>角色權限</dt><dd>${cellHtml(4)}</dd></div>
+      <div><dt>狀態</dt><dd>${cellHtml(5)}</dd></div>
+      <div><dt>最後修改密碼</dt><dd>${pwDate}</dd></div>
+    </dl>
+    <div class="account-detail-actions">${cellHtml(6)}</div>
+  `;
+  // Close this sheet before any action opens another dialog
+  document.querySelectorAll('#account-detail-body .account-detail-actions button').forEach(b => {
+    b.addEventListener('click', () => closeModal('modal-account-detail'), { capture: true });
+  });
+  openModal('modal-account-detail');
+};
+
+function closeMobileMenu() {
+  document.getElementById('mobile-drawer').classList.remove('open');
+  document.getElementById('mobile-drawer').setAttribute('aria-hidden', 'true');
+  document.getElementById('mobile-drawer-overlay').classList.add('hidden');
+  document.getElementById('btn-mobile-menu').setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('drawer-open');
+}
+
+function openMobileMenu() {
+  if (!state.user) return;
+  // User info
+  document.getElementById('drawer-user-avatar').textContent = state.user.name.charAt(0);
+  document.getElementById('drawer-user-name').textContent = `${state.user.name} (${state.user.id})`;
+  const adminTag = document.getElementById('user-display-admin');
+  const isAdminShown = adminTag && !adminTag.classList.contains('hidden');
+  document.getElementById('drawer-user-sub').textContent =
+    (state.user.groupOrder ? `第 ${state.user.groupOrder} 組` : state.user.groupName || '') +
+    (isAdminShown ? ` · ${adminTag.textContent.trim()}` : '');
+
+  // Build nav from currently visible tab buttons
+  const nav = document.getElementById('mobile-drawer-nav');
+  nav.innerHTML = '';
+  document.querySelectorAll('.tabs-left .tab-btn').forEach(btn => {
+    if (btn.classList.contains('hidden')) return;
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'mobile-drawer-item' + (btn.classList.contains('active') ? ' active' : '');
+    const svg = btn.querySelector('svg');
+    item.innerHTML = (svg ? svg.outerHTML : '') + `<span>${escapeHtml(getTabLabel(btn))}</span>`;
+    item.addEventListener('click', () => {
+      btn.click();
+      closeMobileMenu();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    nav.appendChild(item);
+  });
+
+  document.getElementById('mobile-drawer').classList.add('open');
+  document.getElementById('mobile-drawer').setAttribute('aria-hidden', 'false');
+  document.getElementById('mobile-drawer-overlay').classList.remove('hidden');
+  document.getElementById('btn-mobile-menu').setAttribute('aria-expanded', 'true');
+  document.body.classList.add('drawer-open');
+}
+
+function getTabLabel(btn) {
+  const clone = btn.cloneNode(true);
+  clone.querySelectorAll('svg, .tab-badge').forEach(el => el.remove());
+  return clone.textContent.replace(/\s+/g, ' ').trim();
+}
+
+function updateMobilePageTitle() {
+  const active = document.querySelector('.tabs-left .tab-btn.active');
+  const el = document.getElementById('mobile-page-title');
+  if (active && el) el.textContent = getTabLabel(active);
+}
+
+function initMobileMenu() {
+  document.getElementById('btn-mobile-menu').addEventListener('click', openMobileMenu);
+  document.getElementById('btn-mobile-menu-close').addEventListener('click', closeMobileMenu);
+  document.getElementById('mobile-drawer-overlay').addEventListener('click', closeMobileMenu);
+  document.getElementById('drawer-btn-sync').addEventListener('click', () => {
+    closeMobileMenu();
+    document.getElementById('btn-sync-google').click();
+  });
+  document.getElementById('drawer-btn-logout').addEventListener('click', () => {
+    closeMobileMenu();
+    document.getElementById('btn-logout-user').click();
+  });
+  document.querySelectorAll('.tabs-left .tab-btn').forEach(btn => btn.addEventListener('click', updateMobilePageTitle));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeMobileMenu();
+  });
+  updateMobilePageTitle();
+}
+
+document.addEventListener('DOMContentLoaded', initMobileMenu);
 
 // ==================== HELPERS ====================
 function openModal(id) {

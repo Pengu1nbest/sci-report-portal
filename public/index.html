@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20261124c" />
+  <link rel="stylesheet" href="./styles.css?v=20261124d" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -51,6 +51,11 @@
           <button id="btn-logout-user" class="btn-link" title="登出系統">登出</button>
         </div>
       </div>
+
+      <!-- Mobile Hamburger Menu Button (shown on phones only) -->
+      <button id="btn-mobile-menu" class="mobile-menu-btn hidden" type="button" aria-label="開啟選單" aria-controls="mobile-drawer" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
@@ -139,6 +144,7 @@
 
     <!-- Primary Workspace Tabs -->
     <nav class="workspace-tabs" aria-label="功能切換">
+      <div class="mobile-page-title" id="mobile-page-title">所有組別評分表總覽（12 組）</div>
       <div class="tabs-left">
         <button class="tab-btn active" data-tab="tab-all-scores" id="nav-tab-scores">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -393,7 +399,9 @@
             </div>
           </div>
 
-          <div class="table-responsive">
+          <div id="admin-accounts-mobile-list" class="account-mobile-list"></div>
+
+          <div class="table-responsive accounts-table-wrap">
             <table class="grading-table">
               <thead>
                 <tr>
@@ -805,6 +813,40 @@
   <!-- Toast Notification -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <script src="./app.js?v=20261124c"></script>
+  <!-- Mobile Drawer Menu -->
+  <div id="mobile-drawer-overlay" class="mobile-drawer-overlay hidden"></div>
+  <aside id="mobile-drawer" class="mobile-drawer" aria-hidden="true">
+    <div class="mobile-drawer-header">
+      <div class="mobile-drawer-user">
+        <div class="user-avatar" id="drawer-user-avatar">S</div>
+        <div>
+          <div class="drawer-user-name" id="drawer-user-name">未登入</div>
+          <div class="drawer-user-sub" id="drawer-user-sub"></div>
+        </div>
+      </div>
+      <button type="button" class="modal-close" id="btn-mobile-menu-close" aria-label="關閉選單">&times;</button>
+    </div>
+    <nav class="mobile-drawer-nav" id="mobile-drawer-nav"></nav>
+    <div class="mobile-drawer-footer">
+      <button type="button" class="btn btn-outline" id="drawer-btn-sync">🔄 同步 Google 試算表</button>
+      <button type="button" class="btn btn-outline drawer-logout" id="drawer-btn-logout">登出</button>
+    </div>
+  </aside>
+
+  <!-- Mobile Account Detail Modal -->
+  <div id="modal-account-detail" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div>
+          <h2 id="account-detail-title">帳號資料</h2>
+          <p class="modal-subtitle" id="account-detail-subtitle"></p>
+        </div>
+        <button class="modal-close" data-close-modal="modal-account-detail" aria-label="關閉">&times;</button>
+      </div>
+      <div class="modal-body" id="account-detail-body"></div>
+    </div>
+  </div>
+
+  <script src="./app.js?v=20261124d"></script>
 </body>
 </html>
