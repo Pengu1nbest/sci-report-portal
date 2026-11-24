@@ -1794,28 +1794,51 @@ body {
 
   .topbar-actions {
     width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
     gap: 8px;
   }
 
+  #btn-sync-google {
+    width: 100%;
+    justify-content: center;
+  }
+
   .user-badge {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    padding: 5px 10px;
+    gap: 10px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
   }
 
   .user-meta {
+    flex: 1;
     min-width: 0;
-    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
   }
 
   .user-name {
-    font-size: 12.5px;
+    font-size: 13px;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  }
+
+  .user-group-tag,
+  .user-admin-tag,
+  #btn-logout-user {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   /* Login Gate */
@@ -1839,6 +1862,16 @@ body {
     align-items: stretch;
     padding: 14px;
     gap: 14px;
+  }
+
+  .rule-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .tag-accent {
+    white-space: nowrap;
   }
 
   .criteria-chips {
@@ -1881,17 +1914,28 @@ body {
 
   .nav-controls {
     width: 100%;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
     gap: 8px;
   }
 
   .search-box {
     width: 100%;
-    flex: 1 1 100%;
   }
 
   .search-box input {
     width: 100%;
+  }
+
+  .view-toggle {
+    display: flex;
+    width: 100%;
+  }
+
+  .view-toggle .toggle-btn {
+    flex: 1;
+    justify-content: center;
+    white-space: nowrap;
   }
 
   /* Card Header Bar */
