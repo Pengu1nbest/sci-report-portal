@@ -1018,13 +1018,19 @@ function renderAdminBackend() {
         acc.id === '25101114' ||
         acc.id === 'teacher' ||
         acc.email.toLowerCase() === 'teacher@stu.edu.tw';
+      const isSelf =
+        state.user &&
+        (acc.email.toLowerCase() === (state.user.email || '').toLowerCase() ||
+          acc.id.toLowerCase() === (state.user.id || '').toLowerCase());
+      const isOtherAdmin = acc.isAdmin && !isSelf;
+
       return `
         <tr>
           <td style="white-space:nowrap;">
             <span class="group-order-pill" style="white-space:nowrap;">${acc.id === 'teacher' ? '授課老師' : acc.groupOrder ? `第 ${acc.groupOrder} 組` : '未分組'}</span>
           </td>
           <td style="white-space:nowrap;">
-            <strong>${escapeHtml(acc.name)}</strong>
+            <strong>${escapeHtml(acc.name)}</strong>${isSelf ? ' <span class="my-group-pill">您</span>' : ''}
           </td>
           <td style="font-family:var(--font-mono); font-weight:700; white-space:nowrap;">
             ${escapeHtml(acc.id)}
@@ -1048,18 +1054,22 @@ function renderAdminBackend() {
           </td>
           <td style="white-space:nowrap;">
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:nowrap;">
-              <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="populateAdminEditAccount('${escapeAttr(acc.email)}')">
-                編輯 / 重設密碼
-              </button>
               ${
-                !isPrimaryAdmin
-                  ? `<button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="toggleAccountAdminRole('${escapeAttr(acc.email)}')">
-                      ${acc.isAdmin ? '設為一般學生' : '設為管理員'}
+                isOtherAdmin
+                  ? `<span style="font-size:12px; color:var(--text-muted); padding:4px 8px; background:#f1f5f9; border-radius:6px; white-space:nowrap;">🔒 其他管理員（不可修改）</span>`
+                  : `<button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="populateAdminEditAccount('${escapeAttr(acc.email)}')">
+                      編輯 / 重設密碼
                     </button>
-                    <button type="button" class="btn-danger-sm" style="white-space:nowrap;" onclick="deleteAdminAccount('${escapeAttr(acc.email)}')">
-                      刪除
-                    </button>`
-                  : `<span style="font-size:11.5px; color:var(--text-muted); padding:4px 6px; white-space:nowrap;">${acc.id === 'teacher' ? '預設老師管理員' : '預設主管理員'}</span>`
+                    ${
+                      !isPrimaryAdmin && !isSelf
+                        ? `<button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="toggleAccountAdminRole('${escapeAttr(acc.email)}')">
+                            ${acc.isAdmin ? '設為一般學生' : '設為管理員'}
+                          </button>
+                          <button type="button" class="btn-danger-sm" style="white-space:nowrap;" onclick="deleteAdminAccount('${escapeAttr(acc.email)}')">
+                            刪除
+                          </button>`
+                        : `<span style="font-size:11.5px; color:var(--text-muted); padding:4px 6px; white-space:nowrap;">${acc.id === 'teacher' ? '預設老師管理員' : isPrimaryAdmin ? '預設主管理員' : '目前登入帳號'}</span>`
+                    }`
               }
             </div>
           </td>
@@ -1165,6 +1175,15 @@ function renderAdminBackend() {
 window.populateAdminEditAccount = function (email) {
   const acc = state.accounts.find(a => a.email.toLowerCase() === email.toLowerCase());
   if (!acc) return;
+
+  const isSelf =
+    state.user &&
+    (acc.email.toLowerCase() === (state.user.email || '').toLowerCase() ||
+      acc.id.toLowerCase() === (state.user.id || '').toLowerCase());
+  if (acc.isAdmin && !isSelf) {
+    showToast('權限限制：管理者不可修改其他管理員的帳號資料。', 'error');
+    return;
+  }
 
   document.getElementById('admin-account-form-title').textContent = `編輯帳號：${acc.name} (${acc.id})`;
   document.getElementById('admin-acc-original-email').value = acc.email;

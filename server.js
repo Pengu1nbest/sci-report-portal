@@ -1149,6 +1149,7 @@ function verifyAdminMiddleware(req, res, next) {
   if (!isAdminEmail(db, adminEmail)) {
     return res.status(403).json({ error: '權限不足：僅限系統管理員（如 s25101114@stu.edu.tw）執行此操作' });
   }
+  req.adminEmail = String(adminEmail).trim().toLowerCase();
   req.db = db;
   next();
 }
@@ -1224,6 +1225,11 @@ app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req,
   const targetGroupOrder = groupOrder ? Number(groupOrder) : null;
   const targetActive = active !== false;
 
+  // Prevent admins from modifying other admins' accounts
+  if (isAdminEmail(db, originalEmail) && originalEmail !== req.adminEmail) {
+    return res.status(403).json({ error: '權限限制：管理者不可修改其他管理員的帳號資料' });
+  }
+
   // Prevent removing admin privilege from primary admins (teacher@stu.edu.tw or s25101114@stu.edu.tw)
   if ((originalEmail === 's25101114@stu.edu.tw' || originalEmail === 'teacher@stu.edu.tw') && (!targetActive || targetRole !== 'admin')) {
     return res.status(400).json({ error: '預設老師與主管理員帳號 (teacher / 25101114) 不可被停用或移除管理員權限' });
@@ -1295,6 +1301,10 @@ app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req,
 app.delete('/api/admin/accounts/:targetEmail', verifyAdminMiddleware, async (req, res) => {
   const db = req.db;
   const targetEmail = decodeURIComponent(req.params.targetEmail).trim().toLowerCase();
+
+  if (isAdminEmail(db, targetEmail) && targetEmail !== req.adminEmail) {
+    return res.status(403).json({ error: '權限限制：管理者不可刪除其他管理員的帳號' });
+  }
 
   if (targetEmail === 's25101114@stu.edu.tw' || targetEmail === 'teacher@stu.edu.tw') {
     return res.status(400).json({ error: '預設老師與主管理員帳號 (teacher / 25101114) 不可刪除' });
