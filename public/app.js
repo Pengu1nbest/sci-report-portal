@@ -409,6 +409,31 @@ function isTeacherUser() {
   );
 }
 
+function isPrimaryAdminAccount(acc) {
+  if (!acc) return false;
+  const id = String(acc.id || '').toLowerCase();
+  const email = String(acc.email || '').toLowerCase();
+  return (
+    id === 'teacher' ||
+    email === 'teacher@stu.edu.tw' ||
+    id === '25101114' ||
+    email === 's25101114@stu.edu.tw'
+  );
+}
+
+// Role hierarchy: 2 = Super Admin (teacher / 25101114), 1 = Sub-Admin, 0 = Student
+function getAccountRank(acc) {
+  if (!acc) return 0;
+  if (isPrimaryAdminAccount(acc)) return 2;
+  if (acc.isAdmin || acc.role === 'admin') return 1;
+  return 0;
+}
+
+function canManageOtherAccount(targetAcc) {
+  if (!state.user || !targetAcc) return false;
+  return getAccountRank(state.user) > getAccountRank(targetAcc);
+}
+
 // Enforce Mandatory Login Gate: hide #portal-main until state.user is authenticated
 function updateUserTopbar() {
   const badge = document.getElementById('user-badge');
@@ -1110,16 +1135,20 @@ function renderAdminBackend() {
   const accTbody = document.getElementById('admin-accounts-tbody');
   accTbody.innerHTML = filteredAccounts
     .map(acc => {
-      const isPrimaryAdmin =
-        acc.email.toLowerCase() === 's25101114@stu.edu.tw' ||
-        acc.id === '25101114' ||
-        acc.id === 'teacher' ||
-        acc.email.toLowerCase() === 'teacher@stu.edu.tw';
+      const targetRank = getAccountRank(acc);
+      const isPrimaryAdmin = targetRank === 2;
       const isSelf =
         state.user &&
         (acc.email.toLowerCase() === (state.user.email || '').toLowerCase() ||
           acc.id.toLowerCase() === (state.user.id || '').toLowerCase());
-      const isOtherAdmin = acc.isAdmin && !isSelf;
+      const canManage = isSelf || canManageOtherAccount(acc);
+
+      const roleBadgeHtml =
+        targetRank === 2
+          ? '<span class="admin-badge-pill" style="white-space:nowrap; background:#fef3c7; color:#92400e; border:1px solid #f59e0b;">👑 最高管理員</span>'
+          : targetRank === 1
+          ? '<span class="admin-badge-pill" style="white-space:nowrap;">🛡️ 一般管理員</span>'
+          : '<span class="role-pill-student" style="white-space:nowrap;">一般學生 (Student)</span>';
 
       return `
         <tr>
@@ -1136,11 +1165,7 @@ function renderAdminBackend() {
             ${escapeHtml(acc.email)}
           </td>
           <td style="white-space:nowrap;">
-            ${
-              acc.isAdmin
-                ? '<span class="admin-badge-pill" style="white-space:nowrap;">系統管理員 (Admin)</span>'
-                : '<span class="role-pill-student" style="white-space:nowrap;">一般學生 (Student)</span>'
-            }
+            ${roleBadgeHtml}
           </td>
           <td style="white-space:nowrap;">
             ${
@@ -1152,15 +1177,15 @@ function renderAdminBackend() {
           <td style="white-space:nowrap;">
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:nowrap;">
               ${
-                isOtherAdmin
-                  ? `<span style="font-size:12px; color:var(--text-muted); padding:4px 8px; background:#f1f5f9; border-radius:6px; white-space:nowrap;">🔒 其他管理員（不可修改）</span>`
+                !canManage
+                  ? `<span style="font-size:12px; color:var(--text-muted); padding:4px 8px; background:#f1f5f9; border-radius:6px; white-space:nowrap;">🔒 ${targetRank === 2 ? '最高管理員（不可修改）' : '同階級管理員（不可修改）'}</span>`
                   : `<button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="populateAdminEditAccount('${escapeAttr(acc.email)}')">
                       編輯 / 重設密碼
                     </button>
                     ${
                       !isPrimaryAdmin && !isSelf
                         ? `<button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="toggleAccountAdminRole('${escapeAttr(acc.email)}')">
-                            ${acc.isAdmin ? '設為一般學生' : '設為管理員'}
+                            ${acc.isAdmin ? '移除管理員權限' : '設為一般管理員'}
                           </button>
                           <button type="button" class="btn-danger-sm" style="white-space:nowrap;" onclick="deleteAdminAccount('${escapeAttr(acc.email)}')">
                             刪除
@@ -1277,8 +1302,8 @@ window.populateAdminEditAccount = function (email) {
     state.user &&
     (acc.email.toLowerCase() === (state.user.email || '').toLowerCase() ||
       acc.id.toLowerCase() === (state.user.id || '').toLowerCase());
-  if (acc.isAdmin && !isSelf) {
-    showToast('權限限制：管理者不可修改其他管理員的帳號資料。', 'error');
+  if (!isSelf && !canManageOtherAccount(acc)) {
+    showToast('權限限制：僅能修改自己或較低階級帳號的資料。', 'error');
     return;
   }
 

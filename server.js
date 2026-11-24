@@ -1225,9 +1225,15 @@ app.put('/api/admin/accounts/:originalEmail', verifyAdminMiddleware, async (req,
   const targetGroupOrder = groupOrder ? Number(groupOrder) : null;
   const targetActive = active !== false;
 
-  // Prevent admins from modifying other admins' accounts
-  if (isAdminEmail(db, originalEmail) && originalEmail !== req.adminEmail) {
-    return res.status(403).json({ error: '權限限制：管理者不可修改其他管理員的帳號資料' });
+  // 3-tier hierarchy: 2 = Super Admin (teacher / 25101114), 1 = Sub-Admin, 0 = Student
+  const getRankByEmail = em => {
+    const e = String(em || '').trim().toLowerCase();
+    if (e === 'teacher@stu.edu.tw' || e === 's25101114@stu.edu.tw') return 2;
+    if (isAdminEmail(db, e)) return 1;
+    return 0;
+  };
+  if (originalEmail !== req.adminEmail && getRankByEmail(req.adminEmail) <= getRankByEmail(originalEmail)) {
+    return res.status(403).json({ error: '權限限制：僅能修改自己或較低階級帳號的資料' });
   }
 
   // Prevent removing admin privilege from primary admins (teacher@stu.edu.tw or s25101114@stu.edu.tw)
@@ -1302,8 +1308,14 @@ app.delete('/api/admin/accounts/:targetEmail', verifyAdminMiddleware, async (req
   const db = req.db;
   const targetEmail = decodeURIComponent(req.params.targetEmail).trim().toLowerCase();
 
-  if (isAdminEmail(db, targetEmail) && targetEmail !== req.adminEmail) {
-    return res.status(403).json({ error: '權限限制：管理者不可刪除其他管理員的帳號' });
+  const getRankByEmail = em => {
+    const e = String(em || '').trim().toLowerCase();
+    if (e === 'teacher@stu.edu.tw' || e === 's25101114@stu.edu.tw') return 2;
+    if (isAdminEmail(db, e)) return 1;
+    return 0;
+  };
+  if (getRankByEmail(req.adminEmail) <= getRankByEmail(targetEmail)) {
+    return res.status(403).json({ error: '權限限制：僅能刪除較低階級的帳號' });
   }
 
   if (targetEmail === 's25101114@stu.edu.tw' || targetEmail === 'teacher@stu.edu.tw') {
