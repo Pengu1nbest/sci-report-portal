@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20261125a" />
+  <link rel="stylesheet" href="./styles.css?v=20261125b" />
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -176,7 +176,7 @@
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
           </svg>
-          Google 雲端試算表連結
+          各組評分表單連結
         </button>
       </div>
 
@@ -210,7 +210,7 @@
             <button type="button" class="btn btn-primary btn-sm hidden" id="btn-master-export-excel" onclick="exportAllScoresExcel()">
               📥 匯出分數總覽 Excel (.xlsx)
             </button>
-            <a href="https://docs.google.com/spreadsheets/d/1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE/edit" target="_blank" rel="noopener" class="ext-link">
+            <a id="btn-master-google-sheet" href="https://docs.google.com/spreadsheets/d/1iBFfy31wZxUXPb0ojm3D4UCrWNSisRS4UCS4_mlzWWE/edit" target="_blank" rel="noopener" class="ext-link hidden">
               開啟 Google 試算表總表 ↗
             </a>
           </div>
@@ -310,7 +310,7 @@
             <div>
               <span class="tag-accent" style="display:inline-block; margin-bottom:6px; background:#0f766e; color:#ffffff; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700;">📤 本組簡報繳交區</span>
               <h2 class="section-title" style="color:#0f766e; font-size:19px;">上傳本組報告簡報檔案</h2>
-              <p class="section-desc">支援 PDF、PPTX、PPT、DOCX 等格式（單檔最大 50MB），上傳後將自動同步備份至課程雲端。</p>
+              <p class="section-desc">支援 PDF、PPTX、PPT、DOCX 等格式（單檔最大 30MB），上傳後將自動同步備份至課程雲端。</p>
             </div>
           </div>
 
@@ -674,7 +674,7 @@
       <div class="modal-header">
         <div>
           <h2 id="admin-account-form-title">新增學生 / 管理員帳號</h2>
-          <p class="modal-subtitle">儲存後將自動更新對應組別名單，密碼以 SHA-256 Hash 加密存入 JSON</p>
+          <p class="modal-subtitle">儲存後將自動更新對應組別名單，密碼以 SHA-256 加密並同步至雲端</p>
         </div>
         <button class="modal-close" data-close-modal="modal-admin-account" aria-label="關閉">&times;</button>
       </div>
@@ -863,6 +863,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20261125a"></script>
+  <script src="./app.js?v=20261125b"></script>
 </body>
 </html>

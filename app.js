@@ -538,6 +538,7 @@ function updateUserTopbar() {
   const adminTag = document.getElementById('user-display-admin');
   const adminNavTab = document.getElementById('nav-tab-admin');
   const masterExportBtn = document.getElementById('btn-master-export-excel');
+  const masterSheetBtn = document.getElementById('btn-master-google-sheet');
   const loginGate = document.getElementById('login-gate-screen');
   const portalMain = document.getElementById('portal-main');
 
@@ -577,10 +578,12 @@ function updateUserTopbar() {
       adminTag.classList.remove('hidden');
       adminNavTab.classList.remove('hidden');
       if (masterExportBtn) masterExportBtn.classList.remove('hidden');
+      if (masterSheetBtn) masterSheetBtn.classList.remove('hidden');
     } else {
       adminTag.classList.add('hidden');
       adminNavTab.classList.add('hidden');
       if (masterExportBtn) masterExportBtn.classList.add('hidden');
+      if (masterSheetBtn) masterSheetBtn.classList.add('hidden');
       if (document.getElementById('tab-admin').classList.contains('active')) {
         document.getElementById('nav-tab-scores').click();
       }
@@ -599,13 +602,14 @@ function updateUserTopbar() {
     adminTag.classList.add('hidden');
     adminNavTab.classList.add('hidden');
     if (masterExportBtn) masterExportBtn.classList.add('hidden');
+      if (masterSheetBtn) masterSheetBtn.classList.add('hidden');
   }
 }
 
 // Client-side & Server-side Excel (.xlsx) Export
 window.exportAllScoresExcel = async function () {
   if (!isUserAdmin()) {
-    showToast('僅限管理員（學號 25101114）可匯出分數總覽 Excel 檔', 'error');
+    showToast('僅限管理員可匯出分數總覽 Excel 檔', 'error');
     return;
   }
 
@@ -1568,7 +1572,7 @@ window.toggleAccountAdminRole = async function (email) {
       active: acc.active
     });
     renderAll();
-    showToast(`已將「${acc.name}」的角色更新為 ${newRole === 'admin' ? '系統管理員' : '一般學生'}！`, 'success');
+    showToast(`已將「${acc.name}」的角色更新為 ${newRole === 'admin' ? '一般管理員' : '一般學生'}！`, 'success');
     return;
   }
 
@@ -1595,7 +1599,7 @@ window.toggleAccountAdminRole = async function (email) {
       return;
     }
     await fetchPortalData();
-    showToast(`已將「${acc.name}」的角色更新為 ${newRole === 'admin' ? '系統管理員' : '一般學生'}！`, 'success');
+    showToast(`已將「${acc.name}」的角色更新為 ${newRole === 'admin' ? '一般管理員' : '一般學生'}！`, 'success');
   } catch (err) {
     showToast('操作失敗：' + err.message, 'error');
   }
@@ -2697,13 +2701,13 @@ function bindEvents() {
 
     if (state.isStaticMode) {
       uploadBtn.disabled = true;
-      uploadBtn.textContent = '正在上傳至 Google Drive，請稍候...';
+      uploadBtn.textContent = '正在上傳檔案，請稍候...';
       try {
         await uploadFileToCloud(state.user.groupOrder, file, `${state.user.name} (${state.user.id})`);
         fileInput.value = '';
         resetDropzoneUI();
         renderAll();
-        showToast(`簡報「${file.name}」已上傳到雲端，全班都看得到了！`, 'success');
+        showToast(`簡報「${file.name}」上傳成功！`, 'success');
       } catch (err) {
         uploadBtn.disabled = false;
         uploadBtn.textContent = '📤 重新嘗試上傳';
