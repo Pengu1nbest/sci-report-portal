@@ -54,6 +54,100 @@ async function postAccountToCloud(payload) {
   }
 }
 
+// ==================== SHARED CLOUD PORTAL DATA (Apps Script + Google Drive) ====================
+const MAX_UPLOAD_MB = 30;
+
+function friendlyCloudError(err) {
+  const msg = (err && err.message) || String(err);
+  if (/未知的操作類型/.test(msg)) return '雲端 Apps Script 尚未更新為新版，請管理員重新部署後再試。';
+  if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) return '無法連線到雲端，請確認網路後再試一次。';
+  return msg;
+}
+
+async function portalCloudRequest(payload) {
+  const res = await fetch(ACCOUNTS_GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    redirect: 'follow'
+  });
+  const data = await res.json();
+  if (!data || !data.success) throw new Error((data && data.error) || '雲端處理失敗');
+  if (data.portal) applyCloudPortalToState(data.portal);
+  return data;
+}
+
+async function fetchCloudPortal() {
+  if (!ACCOUNTS_GAS_URL) return null;
+  try {
+    const res = await fetch(`${ACCOUNTS_GAS_URL}?action=portalData&t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.success && data.portal && data.portal.initialized ? data.portal : null;
+  } catch (e) {
+    console.warn('Portal cloud GET warning:', e);
+    return null;
+  }
+}
+
+function mergeCloudPortalIntoDb(db, portal) {
+  if (!portal) return db;
+  const byOrder = new Map((portal.groups || []).map(g => [Number(g.order), g]));
+  for (const g of db.groups || []) {
+    const cg = byOrder.get(Number(g.order));
+    if (cg) {
+      g.title = cg.title || '';
+      g.sourceUrl = cg.sourceUrl || '';
+      g.files = Array.isArray(cg.files) ? cg.files : [];
+      if (cg.updatedAt) g.updatedAt = cg.updatedAt;
+    } else {
+      // Drop any local-only blob: links that only ever worked on one device
+      g.files = (g.files || []).filter(f => f.url && !String(f.url).startsWith('blob:'));
+    }
+  }
+  db.ratings = Array.isArray(portal.ratings) ? portal.ratings : db.ratings || [];
+  return db;
+}
+
+function applyCloudPortalToState(portal) {
+  const byOrder = new Map((portal.groups || []).map(g => [Number(g.order), g]));
+  state.groups.forEach(g => {
+    const cg = byOrder.get(Number(g.order));
+    if (cg) {
+      g.title = cg.title || '';
+      g.sourceUrl = cg.sourceUrl || '';
+      g.files = Array.isArray(cg.files) ? cg.files : [];
+      if (cg.updatedAt) g.updatedAt = cg.updatedAt;
+    }
+  });
+  if (Array.isArray(portal.ratings)) state.ratings = portal.ratings;
+  saveStaticDb();
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(new Error('讀取檔案失敗'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadFileToCloud(groupOrder, file, uploadedBy) {
+  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    throw new Error(`檔案超過 ${MAX_UPLOAD_MB} MB，請壓縮後再上傳，或把雲端連結貼在「參考來源」。`);
+  }
+  const base64 = await fileToBase64(file);
+  return portalCloudRequest({
+    action: 'uploadFile',
+    groupOrder,
+    fileName: file.name,
+    mimeType: file.type || 'application/octet-stream',
+    uploadedBy,
+    base64
+  });
+}
+
 async function mergeCloudAccountsIntoDb(db) {
   if (!ACCOUNTS_GAS_URL) return db;
   try {
@@ -692,11 +786,13 @@ async function fetchPortalData() {
         }
         ex.passwordHash = ex.password;
       }
-      await mergeCloudAccountsIntoDb(parsed);
+      const [, cloudPortal] = await Promise.all([mergeCloudAccountsIntoDb(parsed), fetchCloudPortal()]);
+      mergeCloudPortalIntoDb(parsed, cloudPortal);
       localStorage.setItem('sci_portal_static_db', JSON.stringify(parsed));
       hydrateStaticState(parsed);
     } else {
-      await mergeCloudAccountsIntoDb(initDb);
+      const [, cloudPortal] = await Promise.all([mergeCloudAccountsIntoDb(initDb), fetchCloudPortal()]);
+      mergeCloudPortalIntoDb(initDb, cloudPortal);
       localStorage.setItem('sci_portal_static_db', JSON.stringify(initDb));
       hydrateStaticState(initDb);
     }
@@ -1102,12 +1198,13 @@ window.deleteMyGroupFile = async function (groupOrder, fileId, fileName) {
   if (!confirmed) return;
 
   if (state.isStaticMode) {
-    const grp = state.groups.find(g => g.order === Number(groupOrder));
-    if (grp) {
-      grp.files = (grp.files || []).filter(f => f.id !== fileId);
-      saveStaticDb();
+    showToast('正在從雲端移除檔案...', 'info');
+    try {
+      await portalCloudRequest({ action: 'deleteFile', groupOrder: Number(groupOrder), fileId });
       renderAll();
       showToast(`已移除檔案「${fileName}」`, 'success');
+    } catch (err) {
+      showToast('移除失敗：' + friendlyCloudError(err), 'error');
     }
     return;
   }
@@ -1547,14 +1644,13 @@ window.adminSaveGroupInfo = async function (groupOrder) {
   const sourceUrl = document.getElementById(`admin-grp-source-${groupOrder}`).value;
 
   if (state.isStaticMode) {
-    const grp = state.groups.find(g => g.order === Number(groupOrder));
-    if (grp) {
-      grp.title = title.trim();
-      grp.sourceUrl = sourceUrl.trim();
-      saveStaticDb();
-      await callGasWebApp({ action: 'updateInfo', groupOrder, title: grp.title, sourceUrl: grp.sourceUrl });
+    try {
+      await portalCloudRequest({ action: 'updateGroupInfo', groupOrder: Number(groupOrder), title: title.trim(), sourceUrl: sourceUrl.trim() });
+      await callGasWebApp({ action: 'updateInfo', groupOrder, title: title.trim(), sourceUrl: sourceUrl.trim() });
       renderAll();
       showToast(`已更新第 ${groupOrder} 組報告資訊！`, 'success');
+    } catch (err) {
+      showToast('儲存失敗：' + friendlyCloudError(err), 'error');
     }
     return;
   }
@@ -1589,12 +1685,12 @@ window.adminDeleteGroupFile = async function (groupOrder, fileId) {
   if (!confirm(`確定要移除第 ${groupOrder} 組的這份簡報檔案紀錄嗎？`)) return;
 
   if (state.isStaticMode) {
-    const grp = state.groups.find(g => g.order === Number(groupOrder));
-    if (grp) {
-      grp.files = (grp.files || []).filter(f => f.id !== fileId);
-      saveStaticDb();
+    try {
+      await portalCloudRequest({ action: 'deleteFile', groupOrder: Number(groupOrder), fileId });
       renderAll();
-      showToast(`已移除第 ${groupOrder} 組的檔案紀錄`, 'success');
+      showToast(`已移除第 ${groupOrder} 組的檔案`, 'success');
+    } catch (err) {
+      showToast('移除失敗：' + friendlyCloudError(err), 'error');
     }
     return;
   }
@@ -1621,10 +1717,13 @@ window.adminDeleteRating = async function (ratingId) {
   if (!confirm('確定要刪除此筆評分紀錄嗎？刪除後將自動重算該組平均分數並同步至 Google 試算表總表。')) return;
 
   if (state.isStaticMode) {
-    state.ratings = state.ratings.filter(r => r.id !== ratingId);
-    saveStaticDb();
-    renderAll();
-    showToast('已刪除此筆評分紀錄並重新計算總分！', 'success');
+    try {
+      await portalCloudRequest({ action: 'deleteRating', ratingId });
+      renderAll();
+      showToast('已刪除此筆評分紀錄並重新計算總分！', 'success');
+    } catch (err) {
+      showToast('刪除失敗：' + friendlyCloudError(err), 'error');
+    }
     return;
   }
 
@@ -2318,20 +2417,13 @@ function bindEvents() {
     const file = proxyInput.files[0];
 
     if (state.isStaticMode) {
-      const grp = state.groups.find(g => g.order === Number(groupOrder));
-      if (grp) {
-        const blobUrl = URL.createObjectURL(file);
-        grp.files = grp.files || [];
-        grp.files.unshift({
-          id: `file_${Date.now()}`,
-          name: file.name,
-          url: blobUrl,
-          uploadedBy: `管理員代傳 (${state.user.name})`,
-          uploadedAt: new Date().toISOString()
-        });
-        saveStaticDb();
+      showToast(`正在為第 ${groupOrder} 組上傳簡報至 Google Drive...`, 'info');
+      try {
+        await uploadFileToCloud(Number(groupOrder), file, `管理員代傳 (${state.user.name})`);
         renderAll();
-        showToast(`已為第 ${groupOrder} 組新增簡報「${file.name}」！`, 'success');
+        showToast(`已為第 ${groupOrder} 組上傳簡報「${file.name}」！`, 'success');
+      } catch (err) {
+        showToast('代傳失敗：' + friendlyCloudError(err), 'error');
       }
       return;
     }
@@ -2411,12 +2503,14 @@ function bindEvents() {
         scores,
         comment: (comment || '').trim()
       };
-      if (existingIdx >= 0) {
-        state.ratings[existingIdx] = record;
-      } else {
-        state.ratings.push(record);
+      try {
+        await portalCloudRequest({ action: 'upsertRating', rating: record });
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '送出評分';
+        showToast('評分送出失敗：' + friendlyCloudError(err), 'error');
+        return;
       }
-      saveStaticDb();
       const updatedGrp = state.groups.find(g => g.order === groupOrder);
       await callGasWebApp({
         action: 'rate',
@@ -2476,9 +2570,14 @@ function bindEvents() {
     if (state.isStaticMode) {
       const grp = state.groups.find(g => g.order === state.user.groupOrder);
       if (grp) {
-        grp.title = title.trim();
-        grp.sourceUrl = sourceUrl.trim();
-        saveStaticDb();
+        try {
+          await portalCloudRequest({ action: 'updateGroupInfo', groupOrder: grp.order, title: title.trim(), sourceUrl: sourceUrl.trim() });
+        } catch (err) {
+          showToast('儲存失敗：' + friendlyCloudError(err), 'error');
+          btn.disabled = false;
+          btn.textContent = '儲存並同步更新至 Google 試算表';
+          return;
+        }
         await callGasWebApp({
           action: 'updateInfo',
           groupOrder: grp.order,
@@ -2597,22 +2696,18 @@ function bindEvents() {
     const file = fileInput.files[0];
 
     if (state.isStaticMode) {
-      const grp = state.groups.find(g => g.order === state.user.groupOrder);
-      if (grp) {
-        const blobUrl = URL.createObjectURL(file);
-        grp.files = grp.files || [];
-        grp.files.unshift({
-          id: `file_${Date.now()}`,
-          name: file.name,
-          url: blobUrl,
-          uploadedBy: `${state.user.name} (${state.user.id})`,
-          uploadedAt: new Date().toISOString()
-        });
-        saveStaticDb();
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = '正在上傳至 Google Drive，請稍候...';
+      try {
+        await uploadFileToCloud(state.user.groupOrder, file, `${state.user.name} (${state.user.id})`);
         fileInput.value = '';
         resetDropzoneUI();
         renderAll();
-        showToast(`簡報「${file.name}」已上傳成功！`, 'success');
+        showToast(`簡報「${file.name}」已上傳到雲端，全班都看得到了！`, 'success');
+      } catch (err) {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = '📤 重新嘗試上傳';
+        showToast('上傳失敗：' + friendlyCloudError(err), 'error');
       }
       return;
     }
@@ -2654,7 +2749,14 @@ function bindEvents() {
     const btn = document.getElementById('btn-sync-google');
     btn.disabled = true;
     if (state.isStaticMode) {
-      showToast('目前為 GitHub Pages 靜態模式，已自動載入最新雲端資料與本地變更！', 'success');
+      const portal = await fetchCloudPortal();
+      if (portal) {
+        applyCloudPortalToState(portal);
+        renderAll();
+        showToast('已從雲端載入最新的報告、簡報與評分！', 'success');
+      } else {
+        showToast('暫時無法連線到雲端，請稍後再試。', 'error');
+      }
       btn.disabled = false;
       return;
     }
