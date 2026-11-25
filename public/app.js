@@ -859,6 +859,33 @@ function renderMasterTable() {
     })
     .join('');
 
+  // Mobile: simple tap-to-open group list (no spreadsheet-style table)
+  const mobileList = document.getElementById('master-mobile-list');
+  if (mobileList) {
+    mobileList.innerHTML = groups.length
+      ? groups
+          .map(g => {
+            const isMyGroup = state.user && state.user.groupOrder === g.order;
+            const myRating = findMyExistingRating(g);
+            const hasScore = g.ratingCount > 0;
+            return `
+              <button type="button" class="master-mobile-item ${isMyGroup ? 'is-my-group' : ''}" onclick="openGroupDetail(${g.order})">
+                <span class="order-badge">${g.order}</span>
+                <div class="master-mobile-main">
+                  <div class="master-mobile-title">${escapeHtml(g.title || '未定')}</div>
+                  <div class="master-mobile-sub">${escapeHtml(g.members.map(m => m.name).join('、') || '無組員')}${isMyGroup ? ' <span class="my-group-pill">本組</span>' : ''}${myRating ? ' <span class="my-rated-tag">✓ 已評</span>' : ''}</div>
+                </div>
+                <div class="master-mobile-score">
+                  <span class="total-pill ${hasScore ? '' : 'unscored'}">${hasScore ? g.totalScore.toFixed(1) : '未評'}</span>
+                  <span class="rating-count-sub">${g.ratingCount} 筆</span>
+                </div>
+                <span class="account-mobile-chevron" aria-hidden="true">›</span>
+              </button>`;
+          })
+          .join('')
+      : '<p class="score-empty" style="padding:16px; text-align:center;">找不到符合的組別</p>';
+  }
+
   const s = state.classStats;
   tfoot.innerHTML = `
     <tr>
@@ -2646,6 +2673,64 @@ function bindEvents() {
     }
   });
 }
+
+window.openGroupDetail = function (order) {
+  const g = state.groups.find(x => x.order === order);
+  if (!g) return;
+  const isMyGroup = state.user && state.user.groupOrder === g.order;
+  const myRating = findMyExistingRating(g);
+  const hasScore = g.ratingCount > 0;
+  let myTotal = 0;
+  if (myRating && myRating.scores) {
+    const ms = myRating.scores;
+    myTotal = ['content', 'visuals', 'delivery', 'qna', 'teamwork'].reduce((a, k) => a + Number(ms[k] || 0), 0);
+  }
+  const labels = [
+    ['content', '內容掌握與深度'],
+    ['visuals', '簡報結構與視覺設計'],
+    ['delivery', '口語表達與台風'],
+    ['qna', '時間掌控與問答表現'],
+    ['teamwork', '團隊分工與整體表現']
+  ];
+  const rows = labels
+    .map(([k, label]) => {
+      const v = Number((g.avgScores || {})[k] || 0);
+      return `<div class="gd-score-row">
+        <span class="gd-score-label">${label}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${hasScore ? (v / 20) * 100 : 0}%"></div></div>
+        <span class="gd-score-val">${hasScore ? v.toFixed(1) : '—'}<small>/20</small></span>
+      </div>`;
+    })
+    .join('');
+  const files = (g.files || [])
+    .map(f => `<a href="${escapeAttr(f.url)}" target="_blank" rel="noopener" class="file-pill">📄 ${escapeHtml(truncate(f.name, 30))} ↗</a>`)
+    .join('');
+
+  document.getElementById('group-detail-title').textContent = `第 ${g.order} 組`;
+  document.getElementById('group-detail-subtitle').textContent = g.title || '未定';
+  document.getElementById('group-detail-body').innerHTML = `
+    <div class="gd-total">
+      <div>
+        <div class="gd-total-label">平均總分</div>
+        <div class="gd-total-val">${hasScore ? g.totalScore.toFixed(1) : '尚未評分'}<small>${hasScore ? ' / 100' : ''}</small></div>
+      </div>
+      <div class="gd-total-count">${g.ratingCount} 筆評分${myRating ? `<br><span class="my-rated-tag">✓ 您已評 ${myTotal} 分</span>` : ''}</div>
+    </div>
+    <dl class="account-detail-list">
+      <div><dt>組員</dt><dd>${g.members.map(m => `${escapeHtml(m.name)} <span class="mono" style="font-weight:500;color:var(--text-secondary);">${escapeHtml(m.id)}</span>`).join('<br>') || '無組員'}</dd></div>
+      <div><dt>參考來源</dt><dd>${g.sourceUrl && g.sourceUrl.startsWith('http') ? `<a href="${escapeAttr(g.sourceUrl)}" target="_blank" rel="noopener" class="ext-link">參考連結 ↗</a>` : '無'}</dd></div>
+    </dl>
+    ${files ? `<div class="gd-files"><div class="gd-section-label">報告檔案</div>${files}</div>` : ''}
+    <div class="gd-section-label">各項平均分數</div>
+    <div class="gd-scores">${rows}</div>
+    <div class="account-detail-actions">
+      <button type="button" class="btn ${isMyGroup || myRating ? 'btn-outline' : 'btn-primary'}" onclick="closeModal('modal-group-detail'); openRateModal(${g.order});">
+        ${isMyGroup ? '查看本組評分明細' : myRating ? '修改我的評分 / 明細' : '立即評分 / 明細'}
+      </button>
+    </div>
+  `;
+  openModal('modal-group-detail');
+};
 
 // ==================== MOBILE: ACCOUNT DETAIL & HAMBURGER MENU ====================
 window.openAccountDetail = function (index) {
